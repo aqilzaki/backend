@@ -19,9 +19,4 @@ def create_app():
 
     app.register_blueprint(bp)
 
-   # Import model agar terdeteksi oleh flask db migrate
-    with app.app_context():
-        from app.models import Absensi, Kunjungan  # <- ini wajib
-
-
     return app

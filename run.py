@@ -1,14 +1,8 @@
 from app import create_app, db
-from flask_migrate import Migrate
-from flask.cli import with_appcontext
-import click
+from app.models.models import Absensi, Kunjungan # <-- Baris ini PENTING
 
 app = create_app()
-migrate = Migrate(app, db)
 
-# Tambahkan command untuk init/migrate/upgrade
-@app.cli.command("init-db")
-@with_appcontext
-def init_db():
-    click.echo("Inisialisasi database…")
-    db.create_all()
+@app.shell_context_processor
+def make_shell_context():
+    return {'db': db, 'Absensi': Absensi, 'Kunjungan': Kunjungan}

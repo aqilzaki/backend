@@ -2,7 +2,9 @@ from flask import request, jsonify, current_app
 from werkzeug.utils import secure_filename
 from datetime import datetime, time
 import os
-from ..models import db, Absensi
+
+from app import db
+from app.models.models import Absensi 
 
 def handle_absen():
     id_mr = request.form['id_mr']

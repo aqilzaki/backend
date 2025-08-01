@@ -2,7 +2,9 @@ from flask import request, jsonify, current_app
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
-from ..models import db, Kunjungan
+# Ganti dengan dua baris ini:
+from app import db
+from app.models.models import Kunjungan 
 
 def handle_kunjungan():
     data = request.form
