@@ -1,11 +1,9 @@
 from flask import Blueprint
-from app.controllers import auth_controller,  absensi_controller, kunjungan_controller, export_controller
+from app.controllers import report_controller, auth_controller,  absensi_controller, kunjungan_controller, export_controller
 from flask_jwt_extended import jwt_required
 from app.decorators import admin_required
 
 bp = Blueprint('main', __name__)
-
-
 
 # --- Rute untuk Otentikasi & User Management ---
 @bp.route('/register', methods=['POST'])
@@ -84,3 +82,37 @@ def export_absensi_route():
 @admin_required()
 def export_kunjungan_route():
     return export_controller.export_kunjungan_to_excel()
+
+
+# --- Rute Laporan Sales (Tidak Berubah) ---
+@bp.route('/report/daily', methods=['GET'])
+@jwt_required()
+def daily_report_route():
+    return report_controller.get_daily_report()
+
+@bp.route('/report/monthly/<int:year>/<int:month>', methods=['GET'])
+@jwt_required()
+def monthly_report_route(year, month):
+    return report_controller.get_monthly_report(year, month)
+
+@bp.route('/report/yearly/<int:year>', methods=['GET'])
+@jwt_required()
+def yearly_report_route(year):
+    return report_controller.get_yearly_report(year)
+
+
+# --- Rute Laporan KHUSUS ADMIN ---
+
+# Rute untuk melihat laporan bulanan sales tertentu
+@bp.route('/admin/report/monthly/<int:year>/<int:month>/<string:username>', methods=['GET'])
+@jwt_required()
+@admin_required() # Hanya admin yang bisa akses
+def admin_user_monthly_report_route(year, month, username):
+    return report_controller.get_admin_monthly_report(year, month, username)
+
+# Rute untuk melihat rekapitulasi semua sales dalam satu bulan
+@bp.route('/admin/report/summary/monthly/<int:year>/<int:month>', methods=['GET'])
+@jwt_required()
+@admin_required() # Hanya admin yang bisa akses
+def admin_summary_monthly_report_route(year, month):
+    return report_controller.get_admin_all_sales_summary(year, month)
