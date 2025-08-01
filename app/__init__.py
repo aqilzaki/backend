@@ -4,7 +4,6 @@ from flask_migrate import Migrate
 from app.routes.routes import bp  
 import os
 
-
 db = SQLAlchemy()
 migrate = Migrate()
 
