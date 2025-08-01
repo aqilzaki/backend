@@ -100,6 +100,12 @@ def monthly_report_route(year, month):
 def yearly_report_route(year):
     return report_controller.get_yearly_report(year)
 
+# --- Rute untuk Profil ---
+@bp.route('/profile', methods=['GET'])
+@jwt_required() # Pastikan hanya user yang sudah login bisa akses
+def get_profile_route():
+    return profile_controller.get_my_profile()
+
 
 # --- Rute Laporan KHUSUS ADMIN ---
 
@@ -116,3 +122,10 @@ def admin_user_monthly_report_route(year, month, username):
 @admin_required() # Hanya admin yang bisa akses
 def admin_summary_monthly_report_route(year, month):
     return report_controller.get_admin_all_sales_summary(year, month)
+
+# Rute BARU untuk melihat rekapitulasi tahunan semua sales
+@bp.route('/admin/report/summary/yearly/<int:year>', methods=['GET'])
+@jwt_required()
+@admin_required() # Hanya admin yang bisa akses
+def admin_summary_yearly_report_route(year):
+    return report_controller.get_admin_yearly_summary(year)

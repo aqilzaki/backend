@@ -210,3 +210,70 @@ def get_admin_all_sales_summary(year, month):
         'periode': f"{month:02d}-{year}",
         'summary_per_sales': report
     }), 200
+
+
+# --- FUNGSI LAPORAN TAHUNAN BARU UNTUK ADMIN ---
+def get_admin_yearly_summary(year):
+    """
+    Membuat rekapitulasi tahunan performa semua sales untuk admin,
+    mencakup detail kunjungan dan absensi per bulan.
+    """
+    # --- Inisialisasi struktur data laporan yang baru ---
+    # Format: { 'sales1': { 1: {'kunjungan':{...}, 'absensi':{...}}, 2: {...} }, ... }
+    report = {}
+
+    # --- 1. Query data Kunjungan untuk setahun ---
+    kunjungan_summary = db.session.query(
+        Kunjungan.id_mr,
+        extract('month', Kunjungan.tanggal_input).label('bulan'),
+        Kunjungan.kegiatan,
+        func.count(Kunjungan.id).label('jumlah')
+    ).filter(
+        extract('year', Kunjungan.tanggal_input) == year
+    ).group_by(Kunjungan.id_mr, 'bulan', Kunjungan.kegiatan).all()
+
+    # Olah data kunjungan
+    for username, bulan, kegiatan, jumlah in kunjungan_summary:
+        if username not in report:
+            report[username] = {
+                month: {
+                    'kunjungan': {'maintenance': 0, 'akuisisi': 0, 'prospek': 0, 'total': 0},
+                    'absensi': {'Hadir': 0, 'Terlambat': 0}
+                } for month in range(1, 13)
+            }
+        
+        if bulan and kegiatan:
+            bulan = int(bulan)
+            if 1 <= bulan <= 12:
+                report[username][bulan]['kunjungan'][kegiatan] = jumlah
+                report[username][bulan]['kunjungan']['total'] += jumlah
+
+    # --- 2. Query data Absensi untuk setahun ---
+    absensi_summary = db.session.query(
+        Absensi.id_mr,
+        extract('month', Absensi.tanggal).label('bulan'),
+        Absensi.status_absen,
+        func.count(Absensi.id).label('jumlah')
+    ).filter(
+        extract('year', Absensi.tanggal) == year
+    ).group_by(Absensi.id_mr, 'bulan', Absensi.status_absen).all()
+
+    # Olah data absensi
+    for username, bulan, status, jumlah in absensi_summary:
+        if username not in report:
+            report[username] = {
+                month: {
+                    'kunjungan': {'maintenance': 0, 'akuisisi': 0, 'prospek': 0, 'total': 0},
+                    'absensi': {'Hadir': 0, 'Terlambat': 0}
+                } for month in range(1, 13)
+            }
+
+        if bulan and status:
+            bulan = int(bulan)
+            if 1 <= bulan <= 12 and status in report[username][bulan]['absensi']:
+                report[username][bulan]['absensi'][status] = jumlah
+
+    return jsonify({
+        'periode_tahun': year,
+        'summary_tahunan_per_sales': report
+    }), 200
