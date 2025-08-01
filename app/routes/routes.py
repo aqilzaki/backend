@@ -48,7 +48,6 @@ def delete_kunjungan_route(id):
 
 
 # --- Rute untuk Export ---
-# (Rute ini sudah ada sebelumnya, kita biarkan saja)
 @bp.route('/export/absensi', methods=['GET'])
 def export_absensi_route():
     return export_controller.export_absensi_to_excel()

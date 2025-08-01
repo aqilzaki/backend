@@ -71,3 +71,17 @@ def delete_kunjungan(id):
     db.session.delete(kunjungan)
     db.session.commit()
     return jsonify({'message': f'Kunjungan dengan ID {id} berhasil dihapus.'}), 200
+
+
+def get_kunjungan_perhari():
+    """Mengambil data kunjungan per hari."""
+    kunjungan_list = Kunjungan.query.all()
+    kunjungan_perhari = {}
+
+    for k in kunjungan_list:
+        tanggal = k.tanggal_input.date()
+        if tanggal not in kunjungan_perhari:
+            kunjungan_perhari[tanggal] = []
+        kunjungan_perhari[tanggal].append(k.to_dict())
+
+    return jsonify(kunjungan_perhari), 200
