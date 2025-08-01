@@ -25,8 +25,22 @@ def get_absensi_by_id(id):
     return jsonify(absen.to_dict()), 200
 
 def create_absensi():
-    """Membuat data absensi baru dengan status otomatis."""
+    """Membuat data absensi baru dengan validasi sekali sehari."""
     current_user_username = get_jwt_identity()
+    today = datetime.utcnow().date()
+
+    # --- LOGIKA VALIDASI SEKALI SEHARI DIMULAI DI SINI ---
+    # 1. Cek ke database apakah user ini sudah ada record absensinya untuk tanggal hari ini.
+    existing_absen = Absensi.query.filter_by(
+        id_mr=current_user_username,
+        tanggal=today
+    ).first()
+
+    # 2. Jika sudah ada, kembalikan pesan error.
+    if existing_absen:
+        return jsonify({'message': 'udah absen hari ini bos'}), 409 # 409 Conflict adalah status yang tepat
+
+    # --- JIKA BELUM ABSEN, LANJUTKAN PROSES SEPERTI BIASA ---
 
     if 'foto_absen' not in request.files:
         return jsonify({'message': 'File foto_absen tidak ditemukan'}), 400
@@ -39,30 +53,18 @@ def create_absensi():
     file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
 
-    # --- LOGIKA STATUS OTOMATIS DIMULAI DI SINI ---
-
-    # 1. Dapatkan waktu saat ini
+    # Logika status otomatis (Hadir/Terlambat)
     waktu_sekarang = datetime.utcnow().time()
-
-    # 2. Tentukan batas waktu (jam 9 pagi)
     batas_waktu_terlambat = time(9, 0, 0)
-
-    # 3. Bandingkan dan tentukan status
-    if waktu_sekarang > batas_waktu_terlambat:
-        status = 'Terlambat'
-    else:
-        status = 'Hadir'
-
-    # --- LOGIKA STATUS OTOMATIS SELESAI ---
+    status = 'Terlambat' if waktu_sekarang > batas_waktu_terlambat else 'Hadir'
 
     data = request.form
     new_absen = Absensi(
         id_mr=current_user_username,
-        # Gunakan status yang sudah ditentukan secara otomatis
         status_absen=status,
-        tanggal=datetime.utcnow().date(),
-        waktu_absen=waktu_sekarang,
+        lokasi=data.get('lokasi'),
         foto_absen_path=filename
+        # Kolom 'tanggal' dan 'waktu_absen' akan diisi otomatis oleh default di model
     )
 
     db.session.add(new_absen)
