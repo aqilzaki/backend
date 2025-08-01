@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 from app import db
 from app.models.models import Absensi
+from datetime import datetime, time
 from flask_jwt_extended import get_jwt_identity, get_jwt
 
 def get_all_absensi():
@@ -24,9 +25,9 @@ def get_absensi_by_id(id):
     return jsonify(absen.to_dict()), 200
 
 def create_absensi():
-    """Membuat data absensi baru."""
-     # Saat membuat absensi, id_mr diambil dari token, bukan dari form
+    """Membuat data absensi baru dengan status otomatis."""
     current_user_username = get_jwt_identity()
+
     if 'foto_absen' not in request.files:
         return jsonify({'message': 'File foto_absen tidak ditemukan'}), 400
 
@@ -38,12 +39,30 @@ def create_absensi():
     file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
 
+    # --- LOGIKA STATUS OTOMATIS DIMULAI DI SINI ---
+
+    # 1. Dapatkan waktu saat ini
+    waktu_sekarang = datetime.utcnow().time()
+
+    # 2. Tentukan batas waktu (jam 9 pagi)
+    batas_waktu_terlambat = time(9, 0, 0)
+
+    # 3. Bandingkan dan tentukan status
+    if waktu_sekarang > batas_waktu_terlambat:
+        status = 'Terlambat'
+    else:
+        status = 'Hadir'
+
+    # --- LOGIKA STATUS OTOMATIS SELESAI ---
+
     data = request.form
     new_absen = Absensi(
-        id_mr=current_user_username,  # Ambil dari token
-        status_absen=data.get('status_absen'),
-        lokasi=data.get('lokasi'),
-        foto_absen_path=filename  # Simpan nama file
+        id_mr=current_user_username,
+        # Gunakan status yang sudah ditentukan secara otomatis
+        status_absen=status,
+        tanggal=datetime.utcnow().date(),
+        waktu_absen=waktu_sekarang,
+        foto_absen_path=filename
     )
 
     db.session.add(new_absen)

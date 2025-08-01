@@ -28,7 +28,6 @@ class Absensi(db.Model):
     waktu_absen = db.Column(db.Time, default=datetime.utcnow().time)
     status_absen = db.Column(db.String(20))
     foto_absen_path = db.Column(db.String(255))
-    lokasi = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -40,7 +39,6 @@ class Absensi(db.Model):
             'waktu_absen': self.waktu_absen.isoformat() if self.waktu_absen else None,
             'status_absen': self.status_absen,
             'foto_absen_path': self.foto_absen_path,
-            'lokasi': self.lokasi,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
