@@ -1,57 +1,86 @@
 from flask import Blueprint
-from app.controllers import absensi_controller, kunjungan_controller, export_controller
+from app.controllers import auth_controller,  absensi_controller, kunjungan_controller, export_controller
+from flask_jwt_extended import jwt_required
+from app.decorators import admin_required
 
 bp = Blueprint('main', __name__)
 
+
+
+# --- Rute untuk Otentikasi & User Management ---
+@bp.route('/register', methods=['POST'])
+@jwt_required()
+@admin_required()
+def register_route():
+    return auth_controller.register_user()
+
+@bp.route('/login', methods=['POST'])
+def login_route():
+    return auth_controller.login_user()
+
 # --- Rute untuk Absensi ---
 @bp.route('/absensi', methods=['POST'])
+@jwt_required()
 def create_absensi_route():
     return absensi_controller.create_absensi()
 
 @bp.route('/absensi', methods=['GET'])
+@jwt_required()
 def get_all_absensi_route():
     return absensi_controller.get_all_absensi()
 
 @bp.route('/absensi/<int:id>', methods=['GET'])
+@jwt_required()
 def get_absensi_by_id_route(id):
     return absensi_controller.get_absensi_by_id(id)
 
 @bp.route('/absensi/<int:id>', methods=['PUT'])
+@jwt_required()
 def update_absensi_route(id):
     return absensi_controller.update_absensi(id)
 
 @bp.route('/absensi/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_absensi_route(id):
     return absensi_controller.delete_absensi(id)
 
 
 # --- Rute untuk Kunjungan ---
 @bp.route('/kunjungan', methods=['POST'])
+@jwt_required()
 def create_kunjungan_route():
     return kunjungan_controller.create_kunjungan()
 
 @bp.route('/kunjungan', methods=['GET'])
+@jwt_required()
 def get_all_kunjungan_route():
     return kunjungan_controller.get_all_kunjungan()
 
 @bp.route('/kunjungan/<int:id>', methods=['GET'])
+@jwt_required()
 def get_kunjungan_by_id_route(id):
     return kunjungan_controller.get_kunjungan_by_id(id)
 
 @bp.route('/kunjungan/<int:id>', methods=['PUT'])
+@jwt_required()
 def update_kunjungan_route(id):
     return kunjungan_controller.update_kunjungan(id)
 
 @bp.route('/kunjungan/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_kunjungan_route(id):
     return kunjungan_controller.delete_kunjungan(id)
 
 
 # --- Rute untuk Export ---
 @bp.route('/export/absensi', methods=['GET'])
+@jwt_required()
+@admin_required()
 def export_absensi_route():
     return export_controller.export_absensi_to_excel()
 
 @bp.route('/export/kunjungan', methods=['GET'])
+@jwt_required()
+@admin_required()
 def export_kunjungan_route():
     return export_controller.export_kunjungan_to_excel()

@@ -1,30 +1,36 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager
+from flask_bcrypt import Bcrypt
 import os
 
-# 1. Inisialisasi ekstensi di sini, di luar fungsi
 db = SQLAlchemy()
 migrate = Migrate()
+bcrypt = Bcrypt()
+jwt = JWTManager()
 
 def create_app():
-    """Factory untuk membuat dan mengkonfigurasi aplikasi Flask."""
     app = Flask(__name__)
     
-    # 2. Konfigurasi aplikasi
+    # Konfigurasi aplikasi
     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:@localhost/absensi_sales'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['UPLOAD_FOLDER'] = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'static', 'uploads')
+    # (PENTING) Ganti dengan kunci rahasia yang kuat dan acak
+    app.config['JWT_SECRET_KEY'] = 'ganti-dengan-kunci-rahasia-anda-yang-sangat-aman' 
 
-    # 3. Hubungkan ekstensi dengan aplikasi
+    # Hubungkan ekstensi dengan aplikasi
     db.init_app(app)
     migrate.init_app(app, db)
+    bcrypt.init_app(app)
+    jwt.init_app(app)
 
-    # 4. (KRUSIAL) Impor dan daftarkan blueprint DI DALAM FUNGSI INI
+    # Impor dan daftarkan blueprint
     from app.routes.routes import bp as main_blueprint
     app.register_blueprint(main_blueprint)
     
-    # 5. Impor model agar terdeteksi oleh Flask-Migrate
+    # Impor model agar terdeteksi oleh Flask-Migrate
     with app.app_context():
         from .models import models
 

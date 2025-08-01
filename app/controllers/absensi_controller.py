@@ -3,10 +3,19 @@ from werkzeug.utils import secure_filename
 import os
 from app import db
 from app.models.models import Absensi
+from flask_jwt_extended import get_jwt_identity, get_jwt
 
 def get_all_absensi():
-    """Mengambil semua data absensi."""
-    absensi_list = Absensi.query.all()
+    current_user_username = get_jwt_identity()
+    claims = get_jwt()
+    
+    if claims.get('role') == 'admin':
+        # Admin bisa lihat semua data
+        absensi_list = Absensi.query.all()
+    else:
+        # Sales hanya bisa lihat datanya sendiri
+        absensi_list = Absensi.query.filter_by(id_mr=current_user_username).all()
+        
     return jsonify([absen.to_dict() for absen in absensi_list]), 200
 
 def get_absensi_by_id(id):
@@ -16,6 +25,8 @@ def get_absensi_by_id(id):
 
 def create_absensi():
     """Membuat data absensi baru."""
+     # Saat membuat absensi, id_mr diambil dari token, bukan dari form
+    current_user_username = get_jwt_identity()
     if 'foto_absen' not in request.files:
         return jsonify({'message': 'File foto_absen tidak ditemukan'}), 400
 
@@ -29,7 +40,7 @@ def create_absensi():
 
     data = request.form
     new_absen = Absensi(
-        id_mr=data.get('id_mr'),
+        id_mr=current_user_username,  # Ambil dari token
         status_absen=data.get('status_absen'),
         lokasi=data.get('lokasi'),
         foto_absen_path=filename  # Simpan nama file

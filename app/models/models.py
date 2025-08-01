@@ -1,6 +1,26 @@
 from app import db
 from datetime import datetime
 
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    # Tentukan peran: 'admin' atau 'sales'
+    role = db.Column(db.String(20), nullable=False, default='sales')
+
+    # Relasi ke Absensi dan Kunjungan
+    # 'id_mr' di Absensi/Kunjungan akan merujuk ke 'username' di tabel User
+    absensi = db.relationship('Absensi', backref='user', lazy=True, foreign_keys='Absensi.id_mr', primaryjoin="User.username==Absensi.id_mr")
+    kunjungan = db.relationship('Kunjungan', backref='user', lazy=True, foreign_keys='Kunjungan.id_mr', primaryjoin="User.username==Kunjungan.id_mr")
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'role': self.role
+        }
+
 class Absensi(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     id_mr = db.Column(db.String(20), nullable=False)
