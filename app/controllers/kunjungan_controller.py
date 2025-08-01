@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 from app import db
 from app.models.models import Kunjungan
+from flask_jwt_extended import get_jwt_identity, get_jwt
 
 def get_all_kunjungan():
     """Mengambil semua data kunjungan."""
@@ -16,6 +17,8 @@ def get_kunjungan_by_id(id):
 
 def create_kunjungan():
     """Membuat data kunjungan baru."""
+    current_user_username = get_jwt_identity()
+
     if 'foto_kunjungan' not in request.files:
         return jsonify({'message': 'File foto_kunjungan tidak ditemukan'}), 400
 
@@ -29,7 +32,7 @@ def create_kunjungan():
 
     data = request.form
     new_kunjungan = Kunjungan(
-        id_mr=data.get('id_mr'),
+        id_mr=current_user_username,
         no_visit=data.get('no_visit'),
         nama_outlet=data.get('nama_outlet'),
         lokasi=data.get('lokasi'),

@@ -1,6 +1,7 @@
 import click
 from flask.cli import with_appcontext
-from .controllers import db, bcrypt
+# Benar: Impor langsung dari paket 'app' tempat db dan bcrypt diinisialisasi
+from . import db, bcrypt 
 from .models.models import User
 
 # Gunakan decorator @click untuk membuat perintah baru
