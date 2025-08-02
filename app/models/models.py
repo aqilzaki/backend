@@ -27,6 +27,7 @@ class Absensi(db.Model):
     tanggal = db.Column(db.Date, default=datetime.utcnow().date)
     waktu_absen = db.Column(db.Time, default=datetime.utcnow().time)
     status_absen = db.Column(db.String(20))
+    lokasi = db.Column(db.String(255))
     foto_absen_path = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -38,6 +39,7 @@ class Absensi(db.Model):
             'tanggal': self.tanggal.isoformat() if self.tanggal else None,
             'waktu_absen': self.waktu_absen.isoformat() if self.waktu_absen else None,
             'status_absen': self.status_absen,
+            'lokasi': self.lokasi,
             'foto_absen_path': self.foto_absen_path,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }

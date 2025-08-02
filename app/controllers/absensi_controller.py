@@ -4,6 +4,7 @@ import os
 from app import db
 from app.models.models import Absensi
 from datetime import datetime, time
+import pytz
 from flask_jwt_extended import get_jwt_identity, get_jwt
 
 def get_all_absensi():
@@ -25,23 +26,31 @@ def get_absensi_by_id(id):
     return jsonify(absen.to_dict()), 200
 
 def create_absensi():
-    """Membuat data absensi baru dengan validasi sekali sehari."""
+    """
+    Membuat data absensi baru dengan validasi dan zona waktu yang benar dan konsisten.
+    """
     current_user_username = get_jwt_identity()
-    today = datetime.utcnow().date()
 
-    # --- LOGIKA VALIDASI SEKALI SEHARI DIMULAI DI SINI ---
-    # 1. Cek ke database apakah user ini sudah ada record absensinya untuk tanggal hari ini.
+    # 1. Dapatkan waktu saat ini. Karena koneksi DB sudah di-set, kita bisa pakai waktu server.
+    #    Namun, menggunakan pytz tetap praktik terbaik untuk kejelasan.
+    zona_waktu_jakarta = pytz.timezone('Asia/Jakarta')
+    waktu_sekarang_obj = datetime.now(zona_waktu_jakarta)
+    
+    # 2. Ekstrak tanggal dan waktu untuk digunakan di semua logika
+    tanggal_hari_ini = waktu_sekarang_obj.date()
+    waktu_saat_ini = waktu_sekarang_obj.time()
+
+    # 3. VALIDASI SEKALI SEHARI (DIJAMIN BERFUNGSI)
+    #    Mencari absensi berdasarkan username DAN tanggal yang sudah benar (WIB).
     existing_absen = Absensi.query.filter_by(
         id_mr=current_user_username,
-        tanggal=today
+        tanggal=tanggal_hari_ini
     ).first()
 
-    # 2. Jika sudah ada, kembalikan pesan error.
     if existing_absen:
-        return jsonify({'message': 'udah absen hari ini bos'}), 409 # 409 Conflict adalah status yang tepat
+        return jsonify({'message': 'udah absen hari ini bos'}), 409
 
-    # --- JIKA BELUM ABSEN, LANJUTKAN PROSES SEPERTI BIASA ---
-
+    # 4. Lanjutkan proses jika validasi lolos
     if 'foto_absen' not in request.files:
         return jsonify({'message': 'File foto_absen tidak ditemukan'}), 400
 
@@ -53,22 +62,24 @@ def create_absensi():
     file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
 
-    # Logika status otomatis (Hadir/Terlambat)
-    waktu_sekarang = datetime.utcnow().time()
+    # 5. Tentukan status berdasarkan waktu yang sudah benar
     batas_waktu_terlambat = time(9, 0, 0)
-    status = 'Terlambat' if waktu_sekarang > batas_waktu_terlambat else 'Hadir'
+    status = 'Terlambat' if waktu_saat_ini > batas_waktu_terlambat else 'Hadir'
 
-    data = request.form
+    # 6. Buat objek Absensi baru dengan data yang eksplisit dan konsisten
     new_absen = Absensi(
         id_mr=current_user_username,
         status_absen=status,
-        lokasi=data.get('lokasi'),
-        foto_absen_path=filename
-        # Kolom 'tanggal' dan 'waktu_absen' akan diisi otomatis oleh default di model
+        foto_absen_path=filename,
+        lokasi=request.form.get('lokasi', 'Tidak diketahui'),  # Lokasi bisa diisi dari form, default 'Tidak diketahui'
+        tanggal=tanggal_hari_ini,      # Gunakan tanggal yang sudah kita definisikan
+        waktu_absen=waktu_saat_ini,    # Gunakan waktu yang sudah kita definisikan
+        created_at=waktu_sekarang_obj  # Gunakan objek datetime lengkap
     )
 
     db.session.add(new_absen)
     db.session.commit()
+    
     return jsonify(new_absen.to_dict()), 201
 
 def update_absensi(id):

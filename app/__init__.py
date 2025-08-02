@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
+from flask_cors import CORS
 import os
 
 db = SQLAlchemy()
@@ -13,12 +14,18 @@ jwt = JWTManager()
 def create_app():
     app = Flask(__name__)
     
+    CORS(app)
+    
     # Konfigurasi aplikasi
     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:@localhost/absensi_sales'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # Ini memaksa koneksi database untuk menggunakan zona waktu +07:00 (WIB)
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'connect_args': {'time_zone': '+07:00'}
+    }
     app.config['UPLOAD_FOLDER'] = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'static', 'uploads')
     # (PENTING) Ganti dengan kunci rahasia yang kuat dan acak
-    app.config['JWT_SECRET_KEY'] = 'ganti-dengan-kunci-rahasia-anda-yang-sangat-aman' 
+    app.config['JWT_SECRET_KEY'] = 'ini rahasia yang sangat kuat dan tidak boleh diketahui orang lain' 
 
     # Hubungkan ekstensi dengan aplikasi
     db.init_app(app)
