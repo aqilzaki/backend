@@ -72,7 +72,7 @@ def clear_db():
         # Hapus dengan urutan yang benar untuk menghindari error foreign key
         Kunjungan.query.delete()
         Absensi.query.delete()
-      #User.query.delete()
+        User.query.delete()
         db.session.commit()
         click.echo("Semua data dummy berhasil dihapus.")
     except Exception as e:

@@ -8,7 +8,7 @@ import pytz
 from flask_jwt_extended import get_jwt_identity, get_jwt
 
 def get_all_absensi():
-    current_user_id = get_jwt_identity()
+    current_user_username = get_jwt_identity()
     claims = get_jwt()
     
     if claims.get('role') == 'admin':
@@ -16,7 +16,7 @@ def get_all_absensi():
         absensi_list = Absensi.query.all()
     else:
         # Sales hanya bisa lihat datanya sendiri
-        absensi_list = Absensi.query.filter_by(id_mr=current_user_id).all()
+        absensi_list = Absensi.query.filter_by(id_mr=current_user_username).all()
         
     return jsonify([absen.to_dict() for absen in absensi_list]), 200
 
@@ -26,31 +26,28 @@ def get_absensi_by_id(id):
     return jsonify(absen.to_dict()), 200
 
 def create_absensi():
-    """
-    Membuat data absensi baru dengan validasi dan zona waktu yang benar dan konsisten.
-    """
-    current_user_id = get_jwt_identity()
-    claims = get_jwt()
-    # 1. Dapatkan waktu saat ini. Karena koneksi DB sudah di-set, kita bisa pakai waktu server.
-    #    Namun, menggunakan pytz tetap praktik terbaik untuk kejelasan.
+    """Membuat data absensi baru dengan validasi sekali sehari."""
+    current_user_username = get_jwt_identity()
+     # 1. Tentukan zona waktu Asia/Jakarta
     zona_waktu_jakarta = pytz.timezone('Asia/Jakarta')
-    waktu_sekarang_obj = datetime.now(zona_waktu_jakarta)
     
-    # 2. Ekstrak tanggal dan waktu untuk digunakan di semua logika
-    tanggal_hari_ini = waktu_sekarang_obj.date()
-    waktu_saat_ini = waktu_sekarang_obj.time()
-
-    # 3. VALIDASI SEKALI SEHARI (DIJAMIN BERFUNGSI)
-    #    Mencari absensi berdasarkan username DAN tanggal yang sudah benar (WIB).
+    # 2. Ambil waktu saat ini sesuai zona waktu tersebut
+    waktu_jakarta_sekarang = datetime.now(zona_waktu_jakarta)
+    today = waktu_jakarta_sekarang.date()
+    waktu_sekarang = waktu_jakarta_sekarang.time()
+    # --- LOGIKA VALIDASI SEKALI SEHARI DIMULAI DI SINI ---
+    # 1. Cek ke database apakah user ini sudah ada record absensinya untuk tanggal hari ini.
     existing_absen = Absensi.query.filter_by(
-        id_mr=current_user_id,
-        tanggal=tanggal_hari_ini
+        id_mr=current_user_username,
+        tanggal=today
     ).first()
 
+    # 2. Jika sudah ada, kembalikan pesan error.
     if existing_absen:
-        return jsonify({'message': 'udah absen hari ini bos'}), 409
+        return jsonify({'message': 'udah absen hari ini bos'}), 409 # 409 Conflict adalah status yang tepat
 
-    # 4. Lanjutkan proses jika validasi lolos
+    # --- JIKA BELUM ABSEN, LANJUTKAN PROSES SEPERTI BIASA ---
+
     if 'foto_absen' not in request.files:
         return jsonify({'message': 'File foto_absen tidak ditemukan'}), 400
 
@@ -62,25 +59,22 @@ def create_absensi():
     file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
 
-    # 5. Tentukan status berdasarkan waktu yang sudah benar
+    # Logika status otomatis (Hadir/Terlambat)
+    waktu_sekarang = datetime.utcnow().time()
     batas_waktu_terlambat = time(9, 0, 0)
-    status = 'Terlambat' if waktu_saat_ini > batas_waktu_terlambat else 'Hadir'
+    status = 'Terlambat' if waktu_sekarang > batas_waktu_terlambat else 'Hadir'
 
-    # 6. Buat objek Absensi baru dengan data yang eksplisit dan konsisten
+    data = request.form
     new_absen = Absensi(
-        id_mr=current_user_id,
+        id_mr=current_user_username,
         status_absen=status,
-        foto_absen_path=filename,
-        username=claims.get('username', 'Tidak diketahui'),  # Username bisa diambil dari klaim JWT
-        lokasi=request.form.get('lokasi', 'Tidak diketahui'),  # Lokasi bisa diisi dari form, default 'Tidak diketahui'
-        tanggal=tanggal_hari_ini,      # Gunakan tanggal yang sudah kita definisikan
-        waktu_absen=waktu_saat_ini,    # Gunakan waktu yang sudah kita definisikan
-        created_at=waktu_sekarang_obj  # Gunakan objek datetime lengkap
+        lokasi=data.get('lokasi'),
+        foto_absen_path=filename
+        # Kolom 'tanggal' dan 'waktu_absen' akan diisi otomatis oleh default di model
     )
 
     db.session.add(new_absen)
     db.session.commit()
-    
     return jsonify(new_absen.to_dict()), 201
 
 def update_absensi(id):

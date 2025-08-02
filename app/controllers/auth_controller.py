@@ -37,10 +37,8 @@ def login_user():
 
     if user and bcrypt.check_password_hash(user.password_hash, password):
         # Buat token dengan role di dalamnya
-        identity = user.id
-        additional_claims = {"role": user.role,
-                             "username": user.username}
-        access_token = create_access_token(identity=identity, additional_claims=additional_claims)
+        additional_claims = {"role": user.role}
+        access_token = create_access_token(identity=user.username, additional_claims=additional_claims)
         return jsonify(access_token=access_token, role=user.role, username=user.username)
 
     return jsonify({"msg": "Username atau password salah"}), 401
