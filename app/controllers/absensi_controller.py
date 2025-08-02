@@ -8,7 +8,7 @@ import pytz
 from flask_jwt_extended import get_jwt_identity, get_jwt
 
 def get_all_absensi():
-    current_user_username = get_jwt_identity()
+    current_user_id = get_jwt_identity()
     claims = get_jwt()
     
     if claims.get('role') == 'admin':
@@ -16,7 +16,7 @@ def get_all_absensi():
         absensi_list = Absensi.query.all()
     else:
         # Sales hanya bisa lihat datanya sendiri
-        absensi_list = Absensi.query.filter_by(id_mr=current_user_username).all()
+        absensi_list = Absensi.query.filter_by(id_mr=current_user_id).all()
         
     return jsonify([absen.to_dict() for absen in absensi_list]), 200
 
@@ -29,8 +29,8 @@ def create_absensi():
     """
     Membuat data absensi baru dengan validasi dan zona waktu yang benar dan konsisten.
     """
-    current_user_username = get_jwt_identity()
-
+    current_user_id = get_jwt_identity()
+    claims = get_jwt()
     # 1. Dapatkan waktu saat ini. Karena koneksi DB sudah di-set, kita bisa pakai waktu server.
     #    Namun, menggunakan pytz tetap praktik terbaik untuk kejelasan.
     zona_waktu_jakarta = pytz.timezone('Asia/Jakarta')
@@ -43,7 +43,7 @@ def create_absensi():
     # 3. VALIDASI SEKALI SEHARI (DIJAMIN BERFUNGSI)
     #    Mencari absensi berdasarkan username DAN tanggal yang sudah benar (WIB).
     existing_absen = Absensi.query.filter_by(
-        id_mr=current_user_username,
+        id_mr=current_user_id,
         tanggal=tanggal_hari_ini
     ).first()
 
@@ -68,9 +68,10 @@ def create_absensi():
 
     # 6. Buat objek Absensi baru dengan data yang eksplisit dan konsisten
     new_absen = Absensi(
-        id_mr=current_user_username,
+        id_mr=current_user_id,
         status_absen=status,
         foto_absen_path=filename,
+        username=claims.get('username', 'Tidak diketahui'),  # Username bisa diambil dari klaim JWT
         lokasi=request.form.get('lokasi', 'Tidak diketahui'),  # Lokasi bisa diisi dari form, default 'Tidak diketahui'
         tanggal=tanggal_hari_ini,      # Gunakan tanggal yang sudah kita definisikan
         waktu_absen=waktu_saat_ini,    # Gunakan waktu yang sudah kita definisikan

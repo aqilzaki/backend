@@ -23,7 +23,7 @@ class User(db.Model):
 
 class Absensi(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    id_mr = db.Column(db.String(20), nullable=False)
+    id_mr = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     tanggal = db.Column(db.Date, default=datetime.utcnow().date)
     waktu_absen = db.Column(db.Time, default=datetime.utcnow().time)
     status_absen = db.Column(db.String(20))
@@ -46,7 +46,7 @@ class Absensi(db.Model):
 
 class Kunjungan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    id_mr = db.Column(db.String(20), nullable=False)
+    id_mr = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     no_visit = db.Column(db.Integer, nullable=False)
     nama_outlet = db.Column(db.String(100), nullable=False)
     lokasi = db.Column(db.String(255))
