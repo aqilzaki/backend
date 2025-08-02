@@ -1,5 +1,5 @@
 from flask import Blueprint
-from app.controllers import report_controller, auth_controller,  absensi_controller, kunjungan_controller, export_controller
+from app.controllers import report_controller, auth_controller,  absensi_controller, kunjungan_controller, export_controller, profile_controller
 from flask_jwt_extended import jwt_required
 from app.decorators import admin_required
 

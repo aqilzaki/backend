@@ -7,6 +7,7 @@ from flask_jwt_extended import create_access_token, get_jwt
 def register_user():
     data = request.get_json()
     username = data.get('username')
+    name = data.get('name')
     password = data.get('password')
     role = data.get('role', 'sales') # default role is 'sales'
 
@@ -17,12 +18,12 @@ def register_user():
         return jsonify({"msg": "Username sudah ada"}), 400
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(username=username, password_hash=hashed_password, role=role)
+    new_user = User(username=username, name=name, password_hash=hashed_password, role=role)
     
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({"msg": f"User {username} berhasil dibuat"}), 201
+    return jsonify({"msg": f"User {username} untuk berhasil dibuat"}), 201
 
 
 def login_user():
@@ -37,8 +38,9 @@ def login_user():
 
     if user and bcrypt.check_password_hash(user.password_hash, password):
         # Buat token dengan role di dalamnya
-        additional_claims = {"role": user.role}
+        additional_claims = {"role": user.role,
+                             "name": user.name}
         access_token = create_access_token(identity=user.username, additional_claims=additional_claims)
-        return jsonify(access_token=access_token, role=user.role, username=user.username)
+        return jsonify(access_token=access_token, role=user.role, username=user.username, name=user.name), 200
 
     return jsonify({"msg": "Username atau password salah"}), 401

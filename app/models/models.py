@@ -5,6 +5,7 @@ from datetime import datetime
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=True)  # Tambahkan kolom nama
     password_hash = db.Column(db.String(128), nullable=False)
     # Tentukan peran: 'admin' atau 'sales'
     role = db.Column(db.String(20), nullable=False, default='sales')
@@ -18,7 +19,8 @@ class User(db.Model):
         return {
             'id': self.id,
             'username': self.username,
-            'role': self.role
+            'role': self.role,
+            'name': self.name,  # Tambahkan nama ke dictionary
         }
 
 class Absensi(db.Model):
@@ -36,6 +38,7 @@ class Absensi(db.Model):
         return {
             'id': self.id,
             'id_mr': self.id_mr,
+            'name': self.user.name if self.user else None,  # Ambil nama dari relasi User
             'tanggal': self.tanggal.isoformat() if self.tanggal else None,
             'waktu_absen': self.waktu_absen.isoformat() if self.waktu_absen else None,
             'status_absen': self.status_absen,

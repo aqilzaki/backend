@@ -21,9 +21,10 @@ def seed_db():
     sales_users = []
     for i in range(1, 4): # Buat 3 user sales
         username = f'sales{i}'
+        name= f'agus {i}'
         password = '123'
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        user = User(username=username, password_hash=hashed_password, role='sales')
+        user = User(username=username, name=name, password_hash=hashed_password, role='sales')
         sales_users.append(user)
         db.session.add(user)
     
