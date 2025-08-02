@@ -25,7 +25,7 @@ def create_app():
     }
     app.config['UPLOAD_FOLDER'] = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'static', 'uploads')
     # (PENTING) Ganti dengan kunci rahasia yang kuat dan acak
-    app.config['JWT_SECRET_KEY'] = 'ini rahasia yang sangat kuat dan tidak boleh diketahui orang lain' 
+    app.config['JWT_SECRET_KEY'] = 'ini kunci rahasia tekmo yang sangat rahasia' 
 
     # Hubungkan ekstensi dengan aplikasi
     db.init_app(app)
@@ -41,4 +41,4 @@ def create_app():
     with app.app_context():
         from .models import models
 
-    return app
+    return app  
