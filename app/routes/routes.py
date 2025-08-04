@@ -166,3 +166,9 @@ def delete_user_route(username):
 @admin_required() # Pastikan hanya admin yang bisa akses
 def daily_tracking_route(username, date_str):
     return tracking_controller.get_daily_tracking_data(username, date_str)
+
+@bp.route('/admin/tracking/daily/all/<string:date_str>', methods=['GET'])
+@jwt_required()
+@admin_required() # Pastikan hanya admin yang bisa akses
+def daily_tracking_all_route(date_str):
+    return tracking_controller.get_daily_tracking_all_data(date_str)

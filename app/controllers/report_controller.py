@@ -1,7 +1,7 @@
 from flask import jsonify
 from sqlalchemy import func, extract
 from app import db
-from app.models.models import Absensi, Kunjungan
+from app.models.models import Absensi, Kunjungan, User
 from flask_jwt_extended import get_jwt_identity
 from datetime import datetime
 
@@ -165,7 +165,7 @@ def get_admin_monthly_report(year, month, username):
 
     return jsonify({
         'username': username,
-        'name': name,
+        'name': User.name,
         'periode': f"{month:02d}-{year}",
         'rekap_absensi': rekap_absensi,
         'rekap_kunjungan': {
