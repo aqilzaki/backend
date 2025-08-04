@@ -4,12 +4,15 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
+from flask_mail import Mail
+
 import os
 
 db = SQLAlchemy()
 migrate = Migrate()
 bcrypt = Bcrypt()
 jwt = JWTManager()
+mail = Mail() # Buat objek Mail
 
 def create_app():
     app = Flask(__name__)
@@ -27,11 +30,21 @@ def create_app():
     # (PENTING) Ganti dengan kunci rahasia yang kuat dan acak
     app.config['JWT_SECRET_KEY'] = 'ini kunci rahasia tekmo yang sangat rahasia' 
 
+ # --- KONFIGURASI FLASK-MAIL ---
+    # (PENTING: Gunakan environment variables untuk data sensitif ini di produksi)
+    app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    # Ganti dengan email dan "App Password" Anda
+    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME') or 'aqilzaki54@gmail.com' 
+    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD') or 'nlvw krpu akjg rtqa'
+
     # Hubungkan ekstensi dengan aplikasi
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     jwt.init_app(app)
+    mail.init_app(app) # Inisialisasi mail dengan app
 
     # Impor dan daftarkan blueprint
     from app.routes.routes import bp as main_blueprint

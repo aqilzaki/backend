@@ -18,12 +18,19 @@ def seed_db():
     click.echo("Membersihkan database lama.")
 
     # Buat user sales dummy
+    lokasi = ['Jakarta', 'Bandung', 'Surabaya', 'padang', 'medan'] # Lokasi berbeda untuk setiap user
+    lokasi_acak = random.choice(lokasi) # Pilih lokasi acak dari daftar
+    click.echo(f"Lokasi acak yang dipilih: {lokasi_acak}")
     sales_users = []
-    for i in range(1, 4): # Buat 3 user sales
-        username = f'sales{i}'
+    for i in range(1, 9): # Buat 3 user sales
+        username = f'000{i}'
+        name= f'agus {i}'
         password = '123'
+        telpon = f'0812345678{i}'  # Telepon bisa diisi atau tidak    
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        user = User(username=username, password_hash=hashed_password, role='sales')
+        email = f'teddyedwar{i}@gmail.com'  # Pilih email acak dari daftar
+        lokasi = lokasi_acak # Pilih lokasi acak dari daftar
+        user = User(username=username, telpon=telpon, email=email, lokasi=lokasi, name=name, password_hash=hashed_password, role='sales')
         sales_users.append(user)
         db.session.add(user)
     
@@ -72,7 +79,7 @@ def clear_db():
         # Hapus dengan urutan yang benar untuk menghindari error foreign key
         Kunjungan.query.delete()
         Absensi.query.delete()
-        User.query.delete()
+        #User.query.delete()
         db.session.commit()
         click.echo("Semua data dummy berhasil dihapus.")
     except Exception as e:
