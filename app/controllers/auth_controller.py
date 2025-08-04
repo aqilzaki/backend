@@ -50,3 +50,13 @@ def login_user():
         return jsonify(access_token=access_token, role=user.role, username=user.username, name=user.name), 200
 
     return jsonify({"msg": "Username atau password salah"}), 401
+
+def get_all_users():
+    """Mengambil semua data user."""
+    claims = get_jwt()
+
+    if claims.get('role') != 'admin':
+        return jsonify({"msg": "Hanya admin yang bisa melihat daftar user"}), 403
+
+    users = User.query.all()
+    return jsonify([user.to_dict() for user in users]), 200
