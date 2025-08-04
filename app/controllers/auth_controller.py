@@ -9,6 +9,7 @@ def register_user():
     username = data.get('username')
     name = data.get('name')
     email = data.get('email')
+    telpon = data.get('telpon', None)  # Telepon bisa diisi atau tidak
     lokasi = data.get('lokasi', None)  # Lokasi bisa diisi atau tidak
     password = data.get('password')
     role = data.get('role', 'sales') # default role is 'sales'
