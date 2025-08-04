@@ -24,7 +24,7 @@ def register_user():
         return jsonify({"msg": "email sudah ada"}), 400
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(username=username, name=name, email=email, password_hash=hashed_password, role=role, lokasi=lokasi)
+    new_user = User(username=username, telpon=telpon, name=name, email=email, password_hash=hashed_password, role=role, lokasi=lokasi)
     
     db.session.add(new_user)
     db.session.commit()

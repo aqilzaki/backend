@@ -22,7 +22,7 @@ def seed_db():
     lokasi_acak = random.choice(lokasi) # Pilih lokasi acak dari daftar
     click.echo(f"Lokasi acak yang dipilih: {lokasi_acak}")
     sales_users = []
-    for i in range(1, 9): # Buat 3 user sales
+    for i in range(1, 18): # Buat 3 user sales
         username = f'000{i}'
         name= f'agus {i}'
         password = '123'
@@ -58,6 +58,7 @@ def seed_db():
                     kunjungan = Kunjungan(
                         id_mr=user.username,
                         no_visit=random.randint(1, 100),
+                        lokasi="-0.900586, 100.399015",  # Lokasi dummy
                         nama_outlet=f"Outlet Dummy {random.randint(1, 1000)}",
                         kegiatan=random.choice(kegiatan_list),
                         rata_rata_topup=random.uniform(50000, 200000),

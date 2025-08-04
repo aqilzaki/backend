@@ -1,5 +1,5 @@
 from flask import Blueprint
-from app.controllers import report_controller, auth_controller,  absensi_controller, kunjungan_controller, export_controller, profile_controller
+from app.controllers import tracking_controller, report_controller, auth_controller,  absensi_controller, kunjungan_controller, export_controller, profile_controller
 from flask_jwt_extended import jwt_required
 from app.decorators import admin_required
 
@@ -158,3 +158,11 @@ def get_user_by_username_route(username):
 @admin_required()  # Hanya admin yang bisa akses
 def delete_user_route(username):
     return auth_controller.delete_user(username)
+
+
+# --- Rute untuk Tracking & Pemetaan (KHUSUS ADMIN) ---
+@bp.route('/admin/tracking/daily/<string:username>/<string:date_str>', methods=['GET'])
+@jwt_required()
+@admin_required() # Pastikan hanya admin yang bisa akses
+def daily_tracking_route(username, date_str):
+    return tracking_controller.get_daily_tracking_data(username, date_str)
