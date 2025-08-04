@@ -140,3 +140,9 @@ def admin_summary_monthly_report_route(year, month):
 @admin_required() # Hanya admin yang bisa akses
 def admin_summary_yearly_report_route(year):
     return report_controller.get_admin_yearly_summary(year)
+
+@bp.route('/admin/get-users', methods=['GET'])
+@jwt_required()
+@admin_required()  # Hanya admin yang bisa akses
+def get_all_users_route():
+    return auth_controller.get_all_users()
