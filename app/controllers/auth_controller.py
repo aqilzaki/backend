@@ -52,30 +52,17 @@ def login_user():
     return jsonify({"msg": "Username atau password salah"}), 401
 
 def get_all_users():
-    """Mengambil semua data user."""
+    """Mengambil semua data user dengan peran 'sales'."""
     claims = get_jwt()
 
     if claims.get('role') != 'admin':
-        return jsonify({"msg": "Hanya admin yang bisa melihat daftar user"}), 403
-    
+        return jsonify({"msg": "Hanya admin yang bisa mengakses fitur ini"}), 403
+
     users_sales = User.query.filter_by(role='sales').all()
-
-    # Jika tidak ada user sales sama sekali, kembalikan list kosong (ini normal)
-    if not users_sales:
-        return jsonify([]), 200
     
-    # Kembalikan daftar user sales dalam format JSON
-    return jsonify(User.to_dict()), 200
+    # Kembalikan daftar user yang sudah diubah menjadi dictionary
+    return jsonify([user.to_dict() for user in users_sales]), 200
 
-def get_user_by_username(username):
-    """Mengambil satu data user berdasarkan username."""
-    claims = get_jwt()
-
-    if claims.get('role') != 'admin':
-        return jsonify({"msg": "Hanya admin yang bisa melihat detail user"}), 403
-    
-    user = User.query.filter_by(username=username).first_or_404()
-    return jsonify(user.to_dict()), 200
 
 def delete_user(username):
     """Menghapus user berdasarkan username."""
