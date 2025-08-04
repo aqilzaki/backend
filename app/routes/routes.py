@@ -84,6 +84,8 @@ def export_kunjungan_route():
     return export_controller.export_kunjungan_to_excel()
 
 
+
+
 # --- Rute Laporan Sales (Tidak Berubah) ---
 @bp.route('/report/daily', methods=['GET'])
 @jwt_required()
@@ -105,6 +107,15 @@ def yearly_report_route(year):
 @jwt_required() # Pastikan hanya user yang sudah login bisa akses
 def get_profile_route():
     return profile_controller.get_my_profile()
+
+@bp.route('/forgot-password', methods=['POST'])
+def forgot_password_route():
+    return profile_controller.forgot_password()
+
+@bp.route('/reset-password', methods=['POST'])
+def reset_password_route():
+    return profile_controller.reset_password()
+
 
 
 # --- Rute Laporan KHUSUS ADMIN ---

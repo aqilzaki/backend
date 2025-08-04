@@ -8,17 +8,22 @@ def register_user():
     data = request.get_json()
     username = data.get('username')
     name = data.get('name')
+    email = data.get('email')
+    lokasi = data.get('lokasi', None)  # Lokasi bisa diisi atau tidak
     password = data.get('password')
     role = data.get('role', 'sales') # default role is 'sales'
 
-    if not username or not password:
-        return jsonify({"msg": "Username dan password dibutuhkan"}), 400
+    if not username or not password or not email:
+        return jsonify({"msg": "Username, password dan email dibutuhkan"}), 400
 
     if User.query.filter_by(username=username).first():
         return jsonify({"msg": "Username sudah ada"}), 400
+    
+    if User.query.filter_by(email=email).first():
+        return jsonify({"msg": "email sudah ada"}), 400
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(username=username, name=name, password_hash=hashed_password, role=role)
+    new_user = User(username=username, name=name, email=email, password_hash=hashed_password, role=role, lokasi=lokasi)
     
     db.session.add(new_user)
     db.session.commit()

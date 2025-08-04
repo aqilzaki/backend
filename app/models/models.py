@@ -6,7 +6,10 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=True)  # Tambahkan kolom nama
+    email = db.Column(db.String(120), unique=True, nullable=True)
     password_hash = db.Column(db.String(128), nullable=False)
+    lokasi = db.Column(db.String(255), nullable=True)  # Lokasi user, bisa diisi jika diperlukan
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     # Tentukan peran: 'admin' atau 'sales'
     role = db.Column(db.String(20), nullable=False, default='sales')
 
@@ -20,7 +23,10 @@ class User(db.Model):
             'id': self.id,
             'username': self.username,
             'role': self.role,
-            'name': self.name,  # Tambahkan nama ke dictionary
+            'email': self.email,
+            'name': self.name, 
+            'lokasi': self.lokasi,
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
 class Absensi(db.Model):
