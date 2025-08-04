@@ -25,11 +25,12 @@ def seed_db():
     for i in range(1, 9): # Buat 3 user sales
         username = f'000{i}'
         name= f'agus {i}'
-        password = '123'    
+        password = '123'
+        telpon = f'0812345678{i}'  # Telepon bisa diisi atau tidak    
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         email = f'teddyedwar{i}@gmail.com'  # Pilih email acak dari daftar
         lokasi = lokasi_acak # Pilih lokasi acak dari daftar
-        user = User(username=username, email=email, lokasi=lokasi, name=name, password_hash=hashed_password, role='sales')
+        user = User(username=username, telpon=telpon, email=email, lokasi=lokasi, name=name, password_hash=hashed_password, role='sales')
         sales_users.append(user)
         db.session.add(user)
     
