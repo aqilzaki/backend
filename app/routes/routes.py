@@ -146,3 +146,15 @@ def admin_summary_yearly_report_route(year):
 @admin_required()  # Hanya admin yang bisa akses
 def get_all_users_route():
     return auth_controller.get_all_users()
+
+@bp.route('/admin/get-user/<string:username>', methods=['GET'])
+@jwt_required()
+@admin_required()  # Hanya admin yang bisa akses
+def get_user_by_username_route(username):
+    return auth_controller.get_user_by_username(username)
+
+@bp.route('/admin/delete-user/<string:username>', methods=['DELETE'])
+@jwt_required()
+@admin_required()  # Hanya admin yang bisa akses
+def delete_user_route(username):
+    return auth_controller.delete_user(username)

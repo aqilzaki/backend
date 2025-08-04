@@ -57,6 +57,35 @@ def get_all_users():
 
     if claims.get('role') != 'admin':
         return jsonify({"msg": "Hanya admin yang bisa melihat daftar user"}), 403
+    
+    users_sales = User.query.filter_by(role='sales').all()
 
-    users = User.query.all()
-    return jsonify([user.to_dict() for user in users]), 200
+    # Jika tidak ada user sales sama sekali, kembalikan list kosong (ini normal)
+    if not users_sales:
+        return jsonify([]), 200
+    
+    # Kembalikan daftar user sales dalam format JSON
+    return jsonify(User.to_dict()), 200
+
+def get_user_by_username(username):
+    """Mengambil satu data user berdasarkan username."""
+    claims = get_jwt()
+
+    if claims.get('role') != 'admin':
+        return jsonify({"msg": "Hanya admin yang bisa melihat detail user"}), 403
+    
+    user = User.query.filter_by(username=username).first_or_404()
+    return jsonify(user.to_dict()), 200
+
+def delete_user(username):
+    """Menghapus user berdasarkan username."""
+    claims = get_jwt()
+
+    if claims.get('role') != 'admin':
+        return jsonify({"msg": "Hanya admin yang bisa menghapus user"}), 403
+    
+    user = User.query.filter_by(username=username).first_or_404()
+    db.session.delete(user)
+    db.session.commit()
+    
+    return jsonify({"msg": f"User {username} berhasil dihapus"}), 200
