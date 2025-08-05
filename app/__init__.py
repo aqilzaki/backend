@@ -1,3 +1,4 @@
+from datetime import timedelta
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -30,6 +31,10 @@ def create_app():
     # (PENTING) Ganti dengan kunci rahasia yang kuat dan acak
     app.config['JWT_SECRET_KEY'] = 'ini kunci rahasia tekmo yang sangat rahasia' 
 
+ # --- KONFIGURASI WAKTU TOKEN ---
+    # Atur token agar berlaku selama 1 hari.
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=1)
+    
  # --- KONFIGURASI FLASK-MAIL ---
     # (PENTING: Gunakan environment variables untuk data sensitif ini di produksi)
     app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
@@ -54,4 +59,4 @@ def create_app():
     with app.app_context():
         from .models import models
 
-    return app  
+    return app

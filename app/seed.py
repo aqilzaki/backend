@@ -22,7 +22,7 @@ def seed_db():
     lokasi_acak = random.choice(lokasi) # Pilih lokasi acak dari daftar
     click.echo(f"Lokasi acak yang dipilih: {lokasi_acak}")
     sales_users = []
-    for i in range(1, 9): # Buat 3 user sales
+    for i in range(1, 18): # Buat 3 user sales
         username = f'000{i}'
         name= f'agus {i}'
         password = '123'
@@ -43,6 +43,22 @@ def seed_db():
         for i in range(30): # Loop untuk 30 hari
             current_date = today - timedelta(days=i)
             
+ 
+            # --- PERBAIKAN UTAMA DI SINI ---
+             # 1. Buat latitude dan longitude acak dalam rentang Sumatra
+            pusat_lat = -0.93
+            pusat_lon = 100.37
+            radius = 0.2 
+
+            # 2. Buat latitude dan longitude acak di sekitar titik pusat
+            lat = random.uniform(pusat_lat - radius, pusat_lat + radius)
+            lon = random.uniform(pusat_lon - radius, pusat_lon + radius)
+            # 3. Bulatkan ke 6 desimal untuk konsistensi   
+            lat = round(lat, 6)
+            lon = round(lon, 6)
+            # 2. Gabungkan menjadi format string "latitude,longitude"
+            lokasi_koordinat = f"{lat},{lon}"
+
             # 80% kemungkinan user akan absen
             if random.random() < 0.8:
                 # 30% kemungkinan telat
@@ -58,6 +74,7 @@ def seed_db():
                     kunjungan = Kunjungan(
                         id_mr=user.username,
                         no_visit=random.randint(1, 100),
+                        lokasi=lokasi_koordinat,  # Lokasi dummy
                         nama_outlet=f"Outlet Dummy {random.randint(1, 1000)}",
                         kegiatan=random.choice(kegiatan_list),
                         rata_rata_topup=random.uniform(50000, 200000),
