@@ -17,7 +17,7 @@ def get_kunjungan_by_id(id):
 
 def create_kunjungan():
     """Membuat data kunjungan baru."""
-    current_user_username = get_jwt_identity()
+    current_user_username = get_jwt_idezntity()
 
     if 'foto_kunjungan' not in request.files:
         return jsonify({'message': 'File foto_kunjungan tidak ditemukan'}), 400
@@ -88,3 +88,14 @@ def get_kunjungan_perhari():
         kunjungan_perhari[tanggal].append(k.to_dict())
 
     return jsonify(kunjungan_perhari), 200
+
+# ambil kunjungan berdasarkan username nya saja
+def get_kunjungan_by_username():
+    """Mengambil data kunjungan berdasarkan username."""
+    current_user_username = get_jwt_identity()
+    kunjungan_list = Kunjungan.query.filter_by(username=current_user_username).all()
+    if not kunjungan_list:
+        return jsonify({'message': 'Tidak ada kunjungan ditemukan untuk pengguna ini.'}), 404
+    # Mengembalikan daftar kunjungan sebagai JSON
+    kunjungan_list = Kunjungan.query.filter_by(id_mr=current_user_username).all()
+    return jsonify([k.to_dict() for k in kunjungan_list]), 200

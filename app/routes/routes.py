@@ -69,6 +69,11 @@ def update_kunjungan_route(id):
 def delete_kunjungan_route(id):
     return kunjungan_controller.delete_kunjungan(id)
 
+@bp.route('/kunjungan/personal', methods=['GET'])
+@jwt_required()
+def get_kunjungan_by_username_route():
+    return kunjungan_controller.get_kunjungan_by_username()
+
 
 # --- Rute untuk Export ---
 @bp.route('/export/absensi', methods=['GET'])
