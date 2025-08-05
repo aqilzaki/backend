@@ -24,7 +24,7 @@ def register_user():
         return jsonify({"msg": "email sudah ada"}), 400
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(username=username, name=name, email=email, password_hash=hashed_password, role=role, lokasi=lokasi)
+    new_user = User(username=username, telpon=telpon, name=name, email=email, password_hash=hashed_password, role=role, lokasi=lokasi)
     
     db.session.add(new_user)
     db.session.commit()
@@ -52,11 +52,27 @@ def login_user():
     return jsonify({"msg": "Username atau password salah"}), 401
 
 def get_all_users():
-    """Mengambil semua data user."""
+    """Mengambil semua data user dengan peran 'sales'."""
     claims = get_jwt()
 
     if claims.get('role') != 'admin':
-        return jsonify({"msg": "Hanya admin yang bisa melihat daftar user"}), 403
+        return jsonify({"msg": "Hanya admin yang bisa mengakses fitur ini"}), 403
 
-    users = User.query.all()
-    return jsonify([user.to_dict() for user in users]), 200
+    users_sales = User.query.filter_by(role='sales').all()
+    
+    # Kembalikan daftar user yang sudah diubah menjadi dictionary
+    return jsonify([user.to_dict() for user in users_sales]), 200
+
+
+def delete_user(username):
+    """Menghapus user berdasarkan username."""
+    claims = get_jwt()
+
+    if claims.get('role') != 'admin':
+        return jsonify({"msg": "Hanya admin yang bisa menghapus user"}), 403
+    
+    user = User.query.filter_by(username=username).first_or_404()
+    db.session.delete(user)
+    db.session.commit()
+    
+    return jsonify({"msg": f"User {username} berhasil dihapus"}), 200

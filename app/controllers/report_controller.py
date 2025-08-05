@@ -1,7 +1,7 @@
 from flask import jsonify
 from sqlalchemy import func, extract
 from app import db
-from app.models.models import Absensi, Kunjungan
+from app.models.models import Absensi, Kunjungan, User
 from flask_jwt_extended import get_jwt_identity
 from datetime import datetime
 
@@ -165,6 +165,7 @@ def get_admin_monthly_report(year, month, username):
 
     return jsonify({
         'username': username,
+        'name': User.name,
         'periode': f"{month:02d}-{year}",
         'rekap_absensi': rekap_absensi,
         'rekap_kunjungan': {
@@ -198,12 +199,14 @@ def get_admin_all_sales_summary(year, month):
     report = {}
     for username, status, count in absensi_summary:
         if username not in report:
-            report[username] = {'absensi': {'Hadir': 0, 'Terlambat': 0}, 'kunjungan': 0}
+            report[username] = {'absensi': {'Hadir': 0, 'Terlambat': 0}, 
+                                'kunjungan': {'maintenance': 0, 'akuisisi': 0, 'prospek': 0, 'total': 0}}
         report[username]['absensi'][status] = count
 
     for username, count in kunjungan_summary:
         if username not in report:
-            report[username] = {'absensi': {'Hadir': 0, 'Terlambat': 0}, 'kunjungan': 0}
+            report[username] = {'absensi': {'Hadir': 0, 'Terlambat': 0}, 
+                                'kunjungan': {'maintenance': 0, 'akuisisi': 0, 'prospek': 0, 'total': 0}}
         report[username]['kunjungan'] = count
 
     return jsonify({
@@ -219,7 +222,6 @@ def get_admin_yearly_summary(year):
     mencakup detail kunjungan dan absensi per bulan.
     """
     # --- Inisialisasi struktur data laporan yang baru ---
-    # Format: { 'sales1': { 1: {'kunjungan':{...}, 'absensi':{...}}, 2: {...} }, ... }
     report = {}
 
     # --- 1. Query data Kunjungan untuk setahun ---
