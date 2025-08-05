@@ -93,7 +93,7 @@ def get_kunjungan_perhari():
 def get_kunjungan_by_username():
     """Mengambil data kunjungan berdasarkan username."""
     current_user_username = get_jwt_identity()
-    kunjungan_list = Kunjungan.query.filter_by(username=current_user_username).all()
+    kunjungan_list = Kunjungan.query.filter_by(id_mr=current_user_username).all()
     if not kunjungan_list:
         return jsonify({'message': 'Tidak ada kunjungan ditemukan untuk pengguna ini.'}), 404
     # Mengembalikan daftar kunjungan sebagai JSON
