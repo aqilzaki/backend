@@ -84,8 +84,6 @@ def export_kunjungan_route():
     return export_controller.export_kunjungan_to_excel()
 
 
-
-
 # --- Rute Laporan Sales (Tidak Berubah) ---
 @bp.route('/report/daily', methods=['GET'])
 @jwt_required()
@@ -126,6 +124,12 @@ def reset_password_route():
 @admin_required() # Hanya admin yang bisa akses
 def admin_user_monthly_report_route(year, month, username):
     return report_controller.get_admin_monthly_report(year, month, username)
+
+@bp.route('/admin/report/daily/all/<string:date_str>', methods=['GET'])
+@jwt_required()
+@admin_required() # Hanya admin yang bisa akses
+def admin_daily_report_route(date_str):
+    return report_controller.get_admin_daily_report_all_sales(date_str)
 
 # Rute untuk melihat rekapitulasi semua sales dalam satu bulan
 @bp.route('/admin/report/summary/monthly/<int:year>/<int:month>', methods=['GET'])
@@ -172,3 +176,4 @@ def daily_tracking_route(username, date_str):
 @admin_required() # Pastikan hanya admin yang bisa akses
 def daily_tracking_all_route(date_str):
     return tracking_controller.get_daily_tracking_all_data(date_str)
+

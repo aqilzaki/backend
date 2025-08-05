@@ -129,6 +129,58 @@ def get_yearly_report(year):
     }), 200
 
 # --- FUNGSI LAPORAN UNTUK ADMIN ---
+def get_admin_daily_report_all_sales(date_str):
+    """
+    Membuat laporan harian untuk semua user pada tanggal tertentu
+    dengan output JSON yang terstruktur.
+    """
+    try:
+        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({"msg": "Format tanggal tidak valid. Gunakan YYYY-MM-DD."}), 400
+
+    # 1. Ambil semua data user sales terlebih dahulu
+    # Ini adalah "kamus" kita untuk mendapatkan nama dari ID
+    users_sales = User.query.filter_by(role='sales').all()
+    users_map = {user.username: user.name for user in users_sales}
+
+    # 2. Inisialisasi struktur laporan untuk SEMUA sales
+    # Ini memastikan sales yang tidak aktif tetap muncul di laporan
+    report = {}
+    for username, name in users_map.items():
+        report[username] = {
+            'name': name,
+            'absensi': {'status': 'Belum Absen'}, # Default status
+            'kunjungan': {'maintenance': 0, 'akuisisi': 0, 'prospek': 0, 'total': 0}
+        }
+
+    # 3. Query data absensi untuk tanggal tersebut dalam satu kali panggilan
+    absensi_hari_ini = Absensi.query.filter(Absensi.tanggal == target_date).all()
+    
+    # Olah data absensi dan masukkan ke dalam struktur laporan
+    for absen in absensi_hari_ini:
+        if absen.id_mr in report:
+            report[absen.id_mr]['absensi']['status'] = absen.status_absen
+
+    # 4. Query data kunjungan untuk tanggal tersebut, dikelompokkan per kategori
+    kunjungan_hari_ini = db.session.query(
+        Kunjungan.id_mr,
+        Kunjungan.kegiatan,
+        func.count(Kunjungan.id)
+    ).filter(
+        func.date(Kunjungan.tanggal_input) == target_date
+    ).group_by(Kunjungan.id_mr, Kunjungan.kegiatan).all()
+
+    # Olah data kunjungan dan masukkan ke dalam struktur laporan
+    for username, kegiatan, jumlah in kunjungan_hari_ini:
+        if username in report and kegiatan:
+            report[username]['kunjungan'][kegiatan] = jumlah
+            report[username]['kunjungan']['total'] += jumlah
+            
+    return jsonify({
+        'tanggal': date_str,
+        'laporan_harian_sales': report
+    }), 200
 
 def get_admin_monthly_report(year, month, username):
     """
@@ -174,7 +226,7 @@ def get_admin_monthly_report(year, month, username):
         }
     }), 200
 
-
+# bulanan untuk semua sales admin only
 def get_admin_all_sales_summary(year, month):
     """
     Membuat rekapitulasi performa semua sales untuk admin dalam satu bulan.

@@ -71,6 +71,7 @@ def create_absensi():
         id_mr=current_user_username,
         status_absen=status,
         foto_absen_path=filename,
+        # Lokasi bisa diisi dari request
         tanggal=tanggal_hari_ini,      # Gunakan tanggal yang sudah kita definisikan
         waktu_absen=waktu_saat_ini,    # Gunakan waktu yang sudah kita definisikan
         created_at=waktu_sekarang_obj  # Gunakan objek datetime lengkap
