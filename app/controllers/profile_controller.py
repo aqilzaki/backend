@@ -12,8 +12,11 @@ serializer = URLSafeTimedSerializer(os.environ.get('JWT_SECRET_KEY') or 'ganti-d
 
 def get_my_profile():
     """Mengambil data profil user yang sedang login."""
-    current_user_id = get_jwt_identity()
-    user = User.query.get_or_404(current_user_id)
+    # 1. get_jwt_identity() sekarang akan mengembalikan USERNAME (misal: "sales1")
+    current_username = get_jwt_identity()
+    # 2. Cari user di database menggunakan kolom 'username'
+    user = User.query.filter_by(username=current_username).first_or_404()
+    # 3. Kembalikan datanya
     return jsonify(user.to_dict()), 200
 
 def update_my_profile():
@@ -42,29 +45,29 @@ def update_my_profile():
 
 def change_my_password():
     """Mengubah password untuk user yang sedang login."""
-    username = get_jwt_identity()
-    user = User.query.filter_by(username=username).first()
-
-    if not user:
-        return jsonify({"msg": "User tidak ditemukan"}), 404
-
+    current_username = get_jwt_identity()
+    user = User.query.filter_by(username=current_username).first_or_404()
     data = request.get_json()
-    current_password = data.get('current_password')
+
+    old_password = data.get('old_password')
     new_password = data.get('new_password')
 
-    if not current_password or not new_password:
-        return jsonify({"msg": "Password lama dan baru wajib diisi"}), 400
+    if not old_password or not new_password:
+        return jsonify({"msg": "Password lama dan password baru dibutuhkan"}), 400
 
-    # Cek apakah password lama cocok
-    if not bcrypt.check_password_hash(user.password, current_password):
+    # 1. Verifikasi password lama dengan yang ada di database
+    #    Gunakan 'password_hash' di sini
+    if not bcrypt.check_password_hash(user.password_hash, old_password):
         return jsonify({"msg": "Password lama salah"}), 401
 
-    # Hash password baru dan simpan
-    hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
-    user.password = hashed_password
+    # 2. Jika password lama benar, buat hash baru dan simpan
+    #    Gunakan 'password_hash' di sini juga
+    new_hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    user.password_hash = new_hashed_password
     
     db.session.commit()
-    return jsonify({"msg": "Password berhasil diubah"}), 200
+
+    return jsonify({"msg": "Password berhasil diubah."}), 200
 
 
 def forgot_password():

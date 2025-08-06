@@ -147,6 +147,11 @@ def get_admin_daily_report_all_sales(date_str):
     # 2. Inisialisasi struktur laporan untuk SEMUA sales
     # Ini memastikan sales yang tidak aktif tetap muncul di laporan
     report = {}
+    total_sales = User.query.filter_by(role='sales').count()
+    if total_sales == 0:    
+        return jsonify({"msg": "Tidak ada user sales ditemukan."}), 404
+    # Inisialisasi semua user dengan default nilai
+    # Ini akan memastikan semua sales muncul di laporan, meskipun tidak ada data absensi
     for username, name in users_map.items():
         report[username] = {
             'name': name,
@@ -181,6 +186,7 @@ def get_admin_daily_report_all_sales(date_str):
             
     return jsonify({
         'tanggal': date_str,
+        'total_sales': total_sales,
         'laporan_harian_sales': report
     }), 200
 
@@ -189,6 +195,11 @@ def get_admin_monthly_report(year, month, username):
     Membuat laporan bulanan untuk user spesifik (dipanggil oleh admin).
     Logikanya sama dengan get_monthly_report, hanya saja username-nya dari parameter.
     """
+    #query hitung total user sales
+    total_sales = User.query.filter_by(role='sales').count()
+    if total_sales == 0:
+        return jsonify({"msg": "Tidak ada user sales ditemukan."}), 404
+    
     # Query Absensi
     absensi_bulan_ini = db.session.query(
         Absensi.status_absen, func.count(Absensi.status_absen)
@@ -240,6 +251,10 @@ def get_admin_all_sales_summary(year, month):
         return jsonify({"summary_per_sales": {}}), 200
 
     laporan = {}
+     #query hitung total user sales
+    total_sales = User.query.filter_by(role='sales').count()
+    if total_sales == 0:
+        return jsonify({"msg": "Tidak ada user sales ditemukan."}), 404
     
     # Langkah 1: Siapkan "kerangka" laporan untuk semua sales dengan nilai default 0
     for user in sales_users:
@@ -276,7 +291,8 @@ def get_admin_all_sales_summary(year, month):
             laporan[username]["kunjungan"][kegiatan] = count
             laporan[username]["kunjungan"]["total"] += count
 
-    return jsonify({"summary_per_sales": laporan}), 200
+    return jsonify({"summary_per_sales": laporan,
+                    "total_sales": total_sales}), 200
 
 
 # --- FUNGSI LAPORAN TAHUNAN BARU UNTUK ADMIN ---
@@ -287,6 +303,11 @@ def get_admin_yearly_summary(year):
     """
     # --- Inisialisasi struktur data laporan yang baru ---
     report = {}
+
+    #query hitung total user sales
+    total_sales = User.query.filter_by(role='sales').count()
+    if total_sales == 0:
+        return jsonify({"msg": "Tidak ada user sales ditemukan."}), 404
 
     # --- 1. Query data Kunjungan untuk setahun ---
     kunjungan_summary = db.session.query(
@@ -350,5 +371,6 @@ def get_admin_yearly_summary(year):
 
     return jsonify({
         'periode_tahun': year,
-        'summary_tahunan_per_sales': report
+        'summary_tahunan_per_sales': report,
+        'total_sales': total_sales
     }), 200
