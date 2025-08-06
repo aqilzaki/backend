@@ -3,56 +3,115 @@ from werkzeug.utils import secure_filename
 import os
 from app import db
 from app.models.models import Kunjungan
-from flask_jwt_extended import get_jwt_identity, get_jwt
+from flask_jwt_extended import get_jwt_identity, jwt_required, get_jwt # Pastikan jwt_required diimpor
 
+# Asumsi Anda memiliki konfigurasi untuk folder upload di app.config
+# Contoh: app.config['UPLOAD_FOLDER'] = 'static/uploads'
+# Pastikan folder ini ada dan memiliki izin tulis
+
+def allowed_file(filename):
+    # Mengambil ALLOWED_EXTENSIONS dari app.config
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in current_app.config.get('ALLOWED_EXTENSIONS', {'png', 'jpg', 'jpeg', 'gif'})
+
+@jwt_required() # Melindungi endpoint ini, hanya user terautentikasi yang bisa akses
+def create_kunjungan():
+    """Membuat data kunjungan baru."""
+    try:
+        current_user_username = get_jwt_identity() # PERBAIKAN: Typo 'idezntity' menjadi 'identity'
+        
+        # Mengambil data dari request.form (untuk field teks dari multipart/form-data)
+        # Menggunakan .get() dengan default None agar tidak error jika field tidak ada
+        no_visit_str = request.form.get('no_visit')
+        nama_outlet = request.form.get('nama_outlet')
+        lokasi = request.form.get('lokasi')
+        kegiatan = request.form.get('kegiatan')
+        kompetitor = request.form.get('kompetitor')
+        rata_rata_topup_str = request.form.get('rata_rata_topup')
+        potensi_topup_str = request.form.get('potensi_topup')
+        persentase_pemakaian_str = request.form.get('persentase_pemakaian')
+        issue = request.form.get('issue')
+
+        # Validasi dasar data wajib (sesuaikan dengan kebutuhan bisnis Anda)
+        if not all([no_visit_str, nama_outlet, lokasi, kegiatan]):
+            return jsonify({"message": "Data wajib (No. Kunjungan, Nama Outlet, Lokasi, Kegiatan) tidak lengkap."}), 400
+
+        # Konversi tipe data ke int/float dan tangani kemungkinan ValueError
+        try:
+            no_visit = int(no_visit_str)
+            # Konversi string kosong menjadi None atau 0.0 sebelum ke float
+            rata_rata_topup = float(rata_rata_topup_str) if rata_rata_topup_str else None
+            potensi_topup = float(potensi_topup_str) if potensi_topup_str else None
+            persentase_pemakaian = float(persentase_pemakaian_str) if persentase_pemakaian_str else None
+        except ValueError:
+            return jsonify({"message": "Format angka tidak valid untuk No. Kunjungan, Rata-rata Top Up, Potensi Top Up, atau Persentase Pemakaian."}), 400
+
+        foto_kunjungan_path = None
+        if 'foto_kunjungan' in request.files:
+            file = request.files['foto_kunjungan']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                
+                # Pastikan UPLOAD_FOLDER terkonfigurasi di app.config
+                upload_folder = current_app.config.get('UPLOAD_FOLDER', 'static/uploads')
+                os.makedirs(upload_folder, exist_ok=True) # Pastikan folder ada
+                
+                file_path = os.path.join(upload_folder, filename)
+                file.save(file_path)
+                foto_kunjungan_path = filename # Simpan nama file saja di DB
+            else:
+                return jsonify({"message": "Tipe file foto tidak diizinkan atau file kosong."}), 400
+        
+        # Tanggal input otomatis di backend saat ini
+        from datetime import datetime
+        tanggal_input_now = datetime.now()
+
+        new_kunjungan = Kunjungan(
+            id_mr=current_user_username, # Mengambil dari token JWT
+            no_visit=no_visit,
+            nama_outlet=nama_outlet,
+            lokasi=lokasi,
+            kegiatan=kegiatan,
+            kompetitor=kompetitor,
+            rata_rata_topup=rata_rata_topup,
+            potensi_topup=potensi_topup,
+            # PERBAIKAN: Menggunakan nama kolom yang benar sesuai database Anda
+            presentase_pemakaian=persentase_pemakaian, # Mengubah 'persentase_pemakaian' menjadi 'presentase_pemakaian'
+            issue=issue,
+            foto_kunjungan_path=foto_kunjungan_path,
+            tanggal_input=tanggal_input_now # Set tanggal input di backend
+        )
+
+        db.session.add(new_kunjungan)
+        db.session.commit()
+        return jsonify({"message": "Kunjungan berhasil ditambahkan!", "kunjungan": new_kunjungan.to_dict()}), 201
+
+    except Exception as e:
+        db.session.rollback() # Rollback jika ada error database
+        print(f"Error saat membuat kunjungan: {e}") # Log error untuk debugging
+        return jsonify({"message": "Terjadi kesalahan server saat menambahkan kunjungan."}), 500
+
+@jwt_required() # Melindungi endpoint ini
 def get_all_kunjungan():
-    """Mengambil semua data kunjungan."""
+    """Mengambil semua data kunjungan (hanya untuk admin)."""
+    claims = get_jwt()
+    if claims.get('role') != 'admin':
+        return jsonify({"message": "Hanya admin yang bisa melihat semua daftar kunjungan."}), 403
+
     kunjungan_list = Kunjungan.query.all()
     return jsonify([k.to_dict() for k in kunjungan_list]), 200
 
+@jwt_required() # Melindungi endpoint ini
 def get_kunjungan_by_id(id):
     """Mengambil satu data kunjungan berdasarkan ID."""
     kunjungan = Kunjungan.query.get_or_404(id)
     return jsonify(kunjungan.to_dict()), 200
 
-def create_kunjungan():
-    """Membuat data kunjungan baru."""
-    current_user_username = get_jwt_idezntity()
-
-    if 'foto_kunjungan' not in request.files:
-        return jsonify({'message': 'File foto_kunjungan tidak ditemukan'}), 400
-
-    file = request.files['foto_kunjungan']
-    if file.filename == '':
-        return jsonify({'message': 'Tidak ada file yang dipilih'}), 400
-
-    filename = secure_filename(file.filename)
-    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-    file.save(file_path)
-
-    data = request.form
-    new_kunjungan = Kunjungan(
-        id_mr=current_user_username,
-        no_visit=data.get('no_visit'),
-        nama_outlet=data.get('nama_outlet'),
-        lokasi=data.get('lokasi'),
-        kegiatan=data.get('kegiatan'),
-        kompetitor=data.get('kompetitor'),
-        rata_rata_topup=data.get('rata_rata_topup'),
-        potensi_topup=data.get('potensi_topup'),
-        presentase_pemakaian=data.get('presentase_pemakaian'),
-        issue=data.get('issue'),
-        foto_kunjungan_path=filename
-    )
-
-    db.session.add(new_kunjungan)
-    db.session.commit()
-    return jsonify(new_kunjungan.to_dict()), 201
-
+@jwt_required() # Melindungi endpoint ini
 def update_kunjungan(id):
     """Memperbarui data kunjungan."""
     kunjungan = Kunjungan.query.get_or_404(id)
-    data = request.json
+    data = request.json # Asumsi update tidak menggunakan multipart/form-data
 
     for key, value in data.items():
         if hasattr(kunjungan, key):
@@ -61,23 +120,27 @@ def update_kunjungan(id):
     db.session.commit()
     return jsonify(kunjungan.to_dict()), 200
 
+@jwt_required() # Melindungi endpoint ini
 def delete_kunjungan(id):
     """Menghapus data kunjungan."""
     kunjungan = Kunjungan.query.get_or_404(id)
     
     if kunjungan.foto_kunjungan_path:
         try:
-            os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], kunjungan.foto_kunjungan_path))
+            # Pastikan UPLOAD_FOLDER terkonfigurasi di app.config
+            upload_folder = current_app.config.get('UPLOAD_FOLDER', 'static/uploads')
+            os.remove(os.path.join(upload_folder, kunjungan.foto_kunjungan_path))
         except OSError as e:
-            print(f"Error deleting file: {e.strerror}")
+            print(f"Error deleting file: {e.strerror}") # Log error jika gagal hapus file
 
     db.session.delete(kunjungan)
     db.session.commit()
     return jsonify({'message': f'Kunjungan dengan ID {id} berhasil dihapus.'}), 200
 
-
+@jwt_required() # Melindungi endpoint ini
 def get_kunjungan_perhari():
     """Mengambil data kunjungan per hari."""
+    # Ini mungkin perlu diubah untuk memfilter berdasarkan user yang login
     kunjungan_list = Kunjungan.query.all()
     kunjungan_perhari = {}
 
@@ -89,13 +152,19 @@ def get_kunjungan_perhari():
 
     return jsonify(kunjungan_perhari), 200
 
-# ambil kunjungan berdasarkan username nya saja
+@jwt_required() # Melindungi endpoint ini
 def get_kunjungan_by_username():
-    """Mengambil data kunjungan berdasarkan username."""
+    """Mengambil data kunjungan berdasarkan username (id_mr)."""
     current_user_username = get_jwt_identity()
-    kunjungan_list = Kunjungan.query.filter_by(username=current_user_username).all()
-    if not kunjungan_list:
-        return jsonify({'message': 'Tidak ada kunjungan ditemukan untuk pengguna ini.'}), 404
-    # Mengembalikan daftar kunjungan sebagai JSON
     kunjungan_list = Kunjungan.query.filter_by(id_mr=current_user_username).all()
+    
+    # PERBAIKAN: Hapus baris duplikat ini
+    # kunjungan_list = Kunjungan.query.filter_by(id_mr=current_user_username).all() 
+    
+    if not kunjungan_list:
+        # Mengembalikan 200 OK dengan list kosong jika tidak ada kunjungan,
+        # atau 404 jika memang tidak ada data sama sekali dan ingin memberi tahu frontend
+        return jsonify([]), 200 # Mengembalikan array kosong jika tidak ada data
+        # return jsonify({'message': 'Tidak ada kunjungan ditemukan untuk pengguna ini.'}), 404 # Opsi lain
+
     return jsonify([k.to_dict() for k in kunjungan_list]), 200
