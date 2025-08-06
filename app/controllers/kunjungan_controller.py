@@ -17,7 +17,7 @@ def get_kunjungan_by_id(id):
 
 def create_kunjungan():
     """Membuat data kunjungan baru."""
-    current_user_username = get_jwt_idezntity()
+    current_user_username = get_jwt_identity()
 
     if 'foto_kunjungan' not in request.files:
         return jsonify({'message': 'File foto_kunjungan tidak ditemukan'}), 400

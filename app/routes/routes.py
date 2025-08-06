@@ -111,6 +111,17 @@ def yearly_report_route(year):
 def get_profile_route():
     return profile_controller.get_my_profile()
 
+@bp.route('/profile/update', methods=['PUT'])
+@jwt_required()
+def update_profile_route():
+    return profile_controller.update_my_profile()
+
+@bp.route('/profile/change-password', methods=['PUT'])
+@jwt_required()
+def change_password_route():
+    return profile_controller.change_my_password()
+
+
 @bp.route('/forgot-password', methods=['POST'])
 def forgot_password_route():
     return profile_controller.forgot_password()

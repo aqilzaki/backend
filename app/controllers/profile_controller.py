@@ -16,6 +16,57 @@ def get_my_profile():
     user = User.query.get_or_404(current_user_id)
     return jsonify(user.to_dict()), 200
 
+def update_my_profile():
+    """Memperbarui data profil (email, no telpon) untuk user yang sedang login."""
+    username = get_jwt_identity()
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return jsonify({"msg": "User tidak ditemukan"}), 404
+
+    data = request.get_json()
+    new_email = data.get('email')
+    new_phone = data.get('telpon')
+
+    # Validasi email jika diubah
+    if new_email and new_email != user.email:
+        if User.query.filter_by(email=new_email).first():
+            return jsonify({"msg": "Email sudah digunakan oleh user lain"}), 400
+        user.email = new_email
+
+    if new_phone:
+        user.telpon = new_phone
+    
+    db.session.commit()
+    return jsonify({"msg": "Profil berhasil diperbarui"}), 200
+
+def change_my_password():
+    """Mengubah password untuk user yang sedang login."""
+    username = get_jwt_identity()
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return jsonify({"msg": "User tidak ditemukan"}), 404
+
+    data = request.get_json()
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+
+    if not current_password or not new_password:
+        return jsonify({"msg": "Password lama dan baru wajib diisi"}), 400
+
+    # Cek apakah password lama cocok
+    if not bcrypt.check_password_hash(user.password, current_password):
+        return jsonify({"msg": "Password lama salah"}), 401
+
+    # Hash password baru dan simpan
+    hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    user.password = hashed_password
+    
+    db.session.commit()
+    return jsonify({"msg": "Password berhasil diubah"}), 200
+
+
 def forgot_password():
     """Membuat dan mengirim token reset password ke email pengguna."""
     data = request.get_json()
