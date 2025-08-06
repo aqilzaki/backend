@@ -11,9 +11,9 @@ def register_user():
     email = data.get('email')
     telpon = data.get('telpon', None)  # Telepon bisa diisi atau tidak
     lokasi = data.get('lokasi', None)  # Lokasi bisa diisi atau tidak
-    password = data.get('password')
     role = data.get('role', 'sales') # default role is 'sales'
 
+    password = "12345" 
     if not username or not password or not email:
         return jsonify({"msg": "Username, password dan email dibutuhkan"}), 400
 

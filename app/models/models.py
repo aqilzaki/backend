@@ -1,5 +1,6 @@
 from app import db
 from datetime import datetime
+from flask import url_for
 
 
 class User(db.Model):
@@ -43,6 +44,11 @@ class Absensi(db.Model):
 
     def to_dict(self):
         """Mengubah objek model menjadi dictionary."""
+        foto_url = None
+        if self.foto_absen_path:
+            # Membuat URL lengkap ke file di folder static/uploads
+            foto_url = url_for('static', filename=f'uploads/{self.foto_absen_path}', _external=True)
+
         return {
             'id': self.id,
             'id_mr': self.id_mr,
@@ -51,7 +57,7 @@ class Absensi(db.Model):
             'waktu_absen': self.waktu_absen.isoformat() if self.waktu_absen else None,
             'status_absen': self.status_absen,
             'lokasi': self.lokasi,
-            'foto_absen_path': self.foto_absen_path,
+            'foto_absen_path': foto_url,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
@@ -72,13 +78,18 @@ class Kunjungan(db.Model):
 
     def to_dict(self):
         """Mengubah objek model menjadi dictionary."""
+          # --- PERBAIKAN DI SINI JUGA ---
+        foto_url = None
+        if self.foto_kunjungan_path:
+            foto_url = url_for('static', filename=f'uploads/{self.foto_kunjungan_path}', _external=True)
+
         return {
             'id': self.id,
             'id_mr': self.id_mr,
             'no_visit': self.no_visit,
             'nama_outlet': self.nama_outlet,
             'lokasi': self.lokasi,
-            'foto_kunjungan_path': self.foto_kunjungan_path,
+            'foto_kunjungan_path': foto_url,
             'kegiatan': self.kegiatan,
             'kompetitor': self.kompetitor,
             'rata_rata_topup': self.rata_rata_topup,
