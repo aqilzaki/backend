@@ -5,93 +5,99 @@ from datetime import datetime
 
 def get_daily_tracking_data(username, date_str):
     """
-    Mengambil data riwayat lokasi kunjungan seorang sales pada tanggal tertentu.
+    Mengambil data riwayat lokasi kunjungan seorang sales pada tanggal tertentu,
+    TERMASUK PATH FOTO KUNJUNGAN.
     """
-    try: 
-        # Ubah string tanggal (YYYY-MM-DD) menjadi objek date
+    try:
         target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
     except ValueError:
-        return jsonify({"msg": "Format tanggal tidak valid. Gunakan YYYY-MM-DD."}), 400
+        return jsonify({"msg": "Format tanggal salah"}), 400
 
-    # Query semua kunjungan oleh user pada tanggal tersebut, diurutkan berdasarkan waktu
-    kunjungan_hari_ini = Kunjungan.query.filter(
-        Kunjungan.user.has(username=username), # Filter berdasarkan username di tabel User
+    kunjungan_harian = Kunjungan.query.filter(
+        Kunjungan.id_mr == username,
         func.date(Kunjungan.tanggal_input) == target_date
     ).order_by(Kunjungan.tanggal_input.asc()).all()
 
-    if not kunjungan_hari_ini:
-        return jsonify({
-            "username": username,
-            "tanggal": date_str,
-            "msg": "Tidak ada data kunjungan untuk sales ini pada tanggal tersebut.",
-            "route": []
-        }), 200
+    if not kunjungan_harian:
+        return jsonify({"msg": "Tidak ada data kunjungan untuk user ini pada tanggal tersebut.", "route": []}), 200
 
-    # Jika ada data, ambil nama user dari tabel User
-    user = User.query.filter_by(username=username).first()
-
-    # Siapkan data rute untuk dikirim
     route_data = []
-    for kunjungan in kunjungan_hari_ini:
-        route_data.append({
-            "nama_outlet": kunjungan.nama_outlet,
-            "lokasi_koordinat": kunjungan.lokasi,
-            "waktu_kunjungan": kunjungan.tanggal_input.strftime('%H:%M:%S'),
-            "kegiatan": kunjungan.kegiatan
-        })
+    for k in kunjungan_harian:
+        kunjungan_dict = k.to_dict()
+        
+        # Mengganti nama kunci 'lokasi' menjadi 'lokasi_koordinat'
+        kunjungan_dict['lokasi_koordinat'] = kunjungan_dict.pop('lokasi', None)
+        # Menambahkan format waktu
+        kunjungan_dict['waktu_kunjungan'] = k.tanggal_input.strftime('%H:%M:%S')
+        
+        # --- PERUBAHAN UTAMA DI SINI ---
+        # Bangun URL lengkap untuk foto jika ada
+        if kunjungan_dict.get('foto_kunjungan_path'):
+            kunjungan_dict['foto_kunjungan_path'] = f"{kunjungan_dict['foto_kunjungan_path']}"
+        else:
+            kunjungan_dict['foto_kunjungan_path'] = None
+        
+        route_data.append(kunjungan_dict)
 
-    return jsonify({
-        "username": username,
-        "tanggal": date_str,
-        "route": route_data
-    }), 200
+    return jsonify({"route": route_data}), 200
+
 
 def get_daily_tracking_all_data(date_str):
     """
     Mengambil data riwayat lokasi semua sales pada tanggal tertentu
-    dengan cara yang efisien.
+    dengan cara yang efisien dan format yang benar.
     """
     try:
         target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
     except ValueError:
         return jsonify({"msg": "Format tanggal tidak valid. Gunakan YYYY-MM-DD."}), 400
 
-    # --- PERBAIKAN UTAMA DI SINI ---
-    # 1. Ambil semua kunjungan pada tanggal tersebut.
-    #    SQLAlchemy akan secara otomatis me-load data user yang terkait
-    #    karena kita sudah mendefinisikan relasi di model.
-    kunjungan_hari_ini = Kunjungan.query.filter(
+    # Ambil semua kunjungan pada tanggal tersebut, dan lakukan join dengan tabel User
+    kunjungan_hari_ini = Kunjungan.query.join(
+        User, Kunjungan.id_mr == User.username
+    ).filter(
         func.date(Kunjungan.tanggal_input) == target_date
-    ).order_by(Kunjungan.tanggal_input.asc()).all()
+    ).order_by(Kunjungan.id_mr, Kunjungan.tanggal_input.asc()).all()
 
     if not kunjungan_hari_ini:
         return jsonify({
             "tanggal": date_str,
             "msg": "Tidak ada data kunjungan pada tanggal tersebut.",
-            "route_per_sales": {} # Kirim objek kosong jika tidak ada data
+            "route_per_sales": {}
         }), 200
 
-    # 2. Olah data menjadi format yang dikelompokkan per sales
     route_per_sales = {}
 
     for kunjungan in kunjungan_hari_ini:
-        # Dapatkan username dari relasi
-        username = kunjungan.user.username if kunjungan.user else "unknown"
-
+        username = kunjungan.id_mr
+        
         # Jika username belum ada di laporan, buat strukturnya
         if username not in route_per_sales:
             route_per_sales[username] = {
-                "name": kunjungan.user.name if kunjungan.user else "Unknown User",
-                "lokasi_sales": kunjungan.user.lokasi if kunjungan.user else "N/A",
+                "name": kunjungan.user.name,
+                "lokasi_sales": kunjungan.user.lokasi,
                 "kunjungan": []
             }
+        
+        kunjungan_dict = kunjungan.to_dict()
+        
+        # --- PERBAIKAN UTAMA DI SINI ---
+        # Ambil nama file dari 'foto_kunjungan'
+        foto_filename = kunjungan_dict.get('foto_kunjungan_path')
+        
+        # Bangun URL lengkap HANYA JIKA nama filenya ada
+        if foto_filename:
+            foto_url = f"{foto_filename}"
+        else:
+            foto_url = None
 
         # Tambahkan detail kunjungan ke dalam list
         route_per_sales[username]["kunjungan"].append({
-            "nama_outlet": kunjungan.nama_outlet,
-            "lokasi_koordinat": kunjungan.lokasi,
+            "nama_outlet": kunjungan_dict.get('nama_outlet'),
+            "lokasi_koordinat": kunjungan_dict.get('lokasi'),
             "waktu_kunjungan": kunjungan.tanggal_input.strftime('%H:%M:%S'),
-            "kegiatan": kunjungan.kegiatan
+            "kegiatan": kunjungan_dict.get('kegiatan'),
+            "foto_kunjungan_path": foto_url # <-- Gunakan URL yang sudah jadi
         })
 
     return jsonify({

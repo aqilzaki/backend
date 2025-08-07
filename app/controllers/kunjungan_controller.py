@@ -2,7 +2,8 @@ from flask import request, jsonify, current_app
 from werkzeug.utils import secure_filename
 import os
 from app import db
-from app.models.models import Kunjungan
+from app.models.models import Kunjungan, User
+from sqlalchemy import extract
 from flask_jwt_extended import get_jwt_identity, jwt_required, get_jwt # Pastikan jwt_required diimpor
 
 # Asumsi Anda memiliki konfigurasi untuk folder upload di app.config
@@ -93,13 +94,54 @@ def create_kunjungan():
 
 @jwt_required() # Melindungi endpoint ini
 def get_all_kunjungan():
-    """Mengambil semua data kunjungan (hanya untuk admin)."""
+    """Mengambil semua data kunjungan, dikelompokkan per tahun, bulan, dan sales."""
     claims = get_jwt()
     if claims.get('role') != 'admin':
-        return jsonify({"message": "Hanya admin yang bisa melihat semua daftar kunjungan."}), 403
+        return jsonify({"message": "Hanya admin yang bisa mengakses fitur ini."}), 403
 
-    kunjungan_list = Kunjungan.query.all()
-    return jsonify([k.to_dict() for k in kunjungan_list]), 200
+    # Ambil semua data kunjungan, join dengan User, dan urutkan
+    semua_kunjungan = Kunjungan.query.join(
+        User, Kunjungan.id_mr == User.username
+    ).order_by(
+        extract('year', Kunjungan.tanggal_input).desc(),
+        extract('month', Kunjungan.tanggal_input).desc(),
+        Kunjungan.id_mr.asc(),
+        Kunjungan.tanggal_input.desc()
+    ).all()
+
+    if not semua_kunjungan:
+        return jsonify({}), 200
+
+    # Siapkan struktur data akhir
+    laporan_terstruktur = {}
+
+    for kunjungan in semua_kunjungan:
+        tahun = kunjungan.tanggal_input.year
+        bulan = kunjungan.tanggal_input.month
+        username = kunjungan.id_mr
+        nama_sales = kunjungan.user.name
+
+        # Buat kunci tahun jika belum ada
+        if tahun not in laporan_terstruktur:
+            laporan_terstruktur[tahun] = {}
+
+        # Buat kunci bulan di dalam tahun jika belum ada
+        if bulan not in laporan_terstruktur[tahun]:
+            laporan_terstruktur[tahun][bulan] = {}
+        
+        # Buat kunci username di dalam bulan jika belum ada
+        if username not in laporan_terstruktur[tahun][bulan]:
+            laporan_terstruktur[tahun][bulan][username] = {
+                "name": nama_sales,
+                "kunjungan_list": []
+            }
+        
+        # Tambahkan detail kunjungan ke dalam daftar
+        kunjungan_dict = kunjungan.to_dict()
+        kunjungan_dict['waktu_input'] = kunjungan.tanggal_input.strftime('%Y-%m-%d %H:%M:%S')
+        laporan_terstruktur[tahun][bulan][username]["kunjungan_list"].append(kunjungan_dict)
+
+    return jsonify(laporan_terstruktur), 200
 
 @jwt_required() # Melindungi endpoint ini
 def get_kunjungan_by_id(id):
@@ -168,3 +210,16 @@ def get_kunjungan_by_username():
         # return jsonify({'message': 'Tidak ada kunjungan ditemukan untuk pengguna ini.'}), 404 # Opsi lain
 
     return jsonify([k.to_dict() for k in kunjungan_list]), 200
+
+def get_kunjungan_by_username_for_admin(username):
+    """Mengambil semua data kunjungan untuk seorang sales spesifik."""
+    
+    # Query semua kunjungan oleh user, diurutkan dari yang paling baru
+    kunjungan_sales = Kunjungan.query.filter_by(id_mr=username).order_by(Kunjungan.tanggal_input.desc()).all()
+
+    if not kunjungan_sales:
+        # Kembalikan array kosong jika tidak ada kunjungan, bukan error
+        return jsonify([]), 200
+
+    # Ubah setiap objek kunjungan menjadi dictionary
+    return jsonify([k.to_dict() for k in kunjungan_sales]), 200
