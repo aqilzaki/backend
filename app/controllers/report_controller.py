@@ -147,10 +147,17 @@ def get_admin_daily_report_all_sales(date_str):
     # 2. Inisialisasi struktur laporan untuk SEMUA sales
     # Ini memastikan sales yang tidak aktif tetap muncul di laporan
     report = {}
+    total_sales = User.query.filter_by(role='sales').count()
+    if total_sales == 0:    
+        return jsonify({"msg": "Tidak ada user sales ditemukan."}), 404
+    # Inisialisasi semua user dengan default nilai
+    # Ini akan memastikan semua sales muncul di laporan, meskipun tidak ada data absensi
     for username, name in users_map.items():
         report[username] = {
             'name': name,
-            'absensi': {'status': 'Belum Absen'}, # Default status
+            'absensi': {'status': 'Belum Absen',
+                        'foto_path': None
+                        }, # Default status
             'kunjungan': {'maintenance': 0, 'akuisisi': 0, 'prospek': 0, 'total': 0}
         }
 
@@ -161,7 +168,7 @@ def get_admin_daily_report_all_sales(date_str):
     for absen in absensi_hari_ini:
         if absen.id_mr in report:
             report[absen.id_mr]['absensi']['status'] = absen.status_absen
-
+            report[absen.id_mr]['absensi']['foto_path'] = absen.foto_absen_path
     # 4. Query data kunjungan untuk tanggal tersebut, dikelompokkan per kategori
     kunjungan_hari_ini = db.session.query(
         Kunjungan.id_mr,
@@ -179,6 +186,7 @@ def get_admin_daily_report_all_sales(date_str):
             
     return jsonify({
         'tanggal': date_str,
+        'total_sales': total_sales,
         'laporan_harian_sales': report
     }), 200
 
@@ -187,6 +195,11 @@ def get_admin_monthly_report(year, month, username):
     Membuat laporan bulanan untuk user spesifik (dipanggil oleh admin).
     Logikanya sama dengan get_monthly_report, hanya saja username-nya dari parameter.
     """
+    #query hitung total user sales
+    total_sales = User.query.filter_by(role='sales').count()
+    if total_sales == 0:
+        return jsonify({"msg": "Tidak ada user sales ditemukan."}), 404
+    
     # Query Absensi
     absensi_bulan_ini = db.session.query(
         Absensi.status_absen, func.count(Absensi.status_absen)
@@ -227,44 +240,59 @@ def get_admin_monthly_report(year, month, username):
     }), 200
 
 # bulanan untuk semua sales admin only
+
 def get_admin_all_sales_summary(year, month):
-    """
-    Membuat rekapitulasi performa semua sales untuk admin dalam satu bulan.
-    """
-    # Query untuk rekap absensi semua user
-    absensi_summary = db.session.query(
+    """Membuat rekapitulasi performa bulanan semua sales untuk admin (versi lebih aman)."""
+    
+    # Ambil semua user dengan role 'sales'
+    sales_users = User.query.filter_by(role='sales').all()
+    if not sales_users:
+        # Jika tidak ada user sales sama sekali, kembalikan data kosong
+        return jsonify({"summary_per_sales": {}}), 200
+
+    laporan = {}
+     #query hitung total user sales
+    total_sales = User.query.filter_by(role='sales').count()
+    if total_sales == 0:
+        return jsonify({"msg": "Tidak ada user sales ditemukan."}), 404
+    
+    # Langkah 1: Siapkan "kerangka" laporan untuk semua sales dengan nilai default 0
+    for user in sales_users:
+        laporan[user.username] = {
+            "name": user.name,
+            "absensi": {"Hadir": 0, "Terlambat": 0},
+            "kunjungan": {"akuisisi": 0, "maintenance": 0, "prospek": 0, "total": 0}
+        }
+
+    # Langkah 2: Query semua data absensi untuk bulan & tahun tersebut dalam satu kali panggilan
+    all_absensi = db.session.query(
         Absensi.id_mr, Absensi.status_absen, func.count(Absensi.id)
     ).filter(
         extract('year', Absensi.tanggal) == year,
         extract('month', Absensi.tanggal) == month
     ).group_by(Absensi.id_mr, Absensi.status_absen).all()
-    
-    # Query untuk rekap kunjungan semua user
-    kunjungan_summary = db.session.query(
-        Kunjungan.id_mr, func.count(Kunjungan.id)
+
+    # Langkah 3: Query semua data kunjungan untuk bulan & tahun tersebut dalam satu kali panggilan
+    all_kunjungan = db.session.query(
+        Kunjungan.id_mr, Kunjungan.kegiatan, func.count(Kunjungan.id)
     ).filter(
         extract('year', Kunjungan.tanggal_input) == year,
         extract('month', Kunjungan.tanggal_input) == month
-    ).group_by(Kunjungan.id_mr).all()
+    ).group_by(Kunjungan.id_mr, Kunjungan.kegiatan).all()
 
-    # Olah data menjadi format yang mudah dibaca
-    report = {}
-    for username, status, count in absensi_summary:
-        if username not in report:
-            report[username] = {'absensi': {'Hadir': 0, 'Terlambat': 0}, 
-                                'kunjungan': {'maintenance': 0, 'akuisisi': 0, 'prospek': 0, 'total': 0}}
-        report[username]['absensi'][status] = count
+    # Langkah 4: Isi kerangka laporan dengan data absensi yang ada
+    for username, status, count in all_absensi:
+        if username in laporan and status in laporan[username]["absensi"]:
+            laporan[username]["absensi"][status] = count
 
-    for username, count in kunjungan_summary:
-        if username not in report:
-            report[username] = {'absensi': {'Hadir': 0, 'Terlambat': 0}, 
-                                'kunjungan': {'maintenance': 0, 'akuisisi': 0, 'prospek': 0, 'total': 0}}
-        report[username]['kunjungan'] = count
+    # Langkah 5: Isi kerangka laporan dengan data kunjungan yang ada
+    for username, kegiatan, count in all_kunjungan:
+        if username in laporan and kegiatan in laporan[username]["kunjungan"]:
+            laporan[username]["kunjungan"][kegiatan] = count
+            laporan[username]["kunjungan"]["total"] += count
 
-    return jsonify({
-        'periode': f"{month:02d}-{year}",
-        'summary_per_sales': report
-    }), 200
+    return jsonify({"summary_per_sales": laporan,
+                    "total_sales": total_sales}), 200
 
 
 # --- FUNGSI LAPORAN TAHUNAN BARU UNTUK ADMIN ---
@@ -276,6 +304,11 @@ def get_admin_yearly_summary(year):
     # --- Inisialisasi struktur data laporan yang baru ---
     report = {}
 
+    #query hitung total user sales
+    total_sales = User.query.filter_by(role='sales').count()
+    if total_sales == 0:
+        return jsonify({"msg": "Tidak ada user sales ditemukan."}), 404
+
     # --- 1. Query data Kunjungan untuk setahun ---
     kunjungan_summary = db.session.query(
         Kunjungan.id_mr,
@@ -285,22 +318,6 @@ def get_admin_yearly_summary(year):
     ).filter(
         extract('year', Kunjungan.tanggal_input) == year
     ).group_by(Kunjungan.id_mr, 'bulan', Kunjungan.kegiatan).all()
-
-    # Olah data kunjungan
-    for username, bulan, kegiatan, jumlah in kunjungan_summary:
-        if username not in report:
-            report[username] = {
-                month: {
-                    'kunjungan': {'maintenance': 0, 'akuisisi': 0, 'prospek': 0, 'total': 0},
-                    'absensi': {'Hadir': 0, 'Terlambat': 0}
-                } for month in range(1, 13)
-            }
-        
-        if bulan and kegiatan:
-            bulan = int(bulan)
-            if 1 <= bulan <= 12:
-                report[username][bulan]['kunjungan'][kegiatan] = jumlah
-                report[username][bulan]['kunjungan']['total'] += jumlah
 
     # --- 2. Query data Absensi untuk setahun ---
     absensi_summary = db.session.query(
@@ -312,22 +329,48 @@ def get_admin_yearly_summary(year):
         extract('year', Absensi.tanggal) == year
     ).group_by(Absensi.id_mr, 'bulan', Absensi.status_absen).all()
 
+    # Ambil mapping username ke nama
+    usernames = set([x[0] for x in kunjungan_summary] + [x[0] for x in absensi_summary])
+    users = User.query.filter(User.username.in_(usernames)).all()
+    username_to_name = {user.username: user.name for user in users}
+
+    # Olah data kunjungan
+    for username, bulan, kegiatan, jumlah in kunjungan_summary:
+        if username not in report:
+            report[username] = {
+                'name': username_to_name.get(username, ""),
+                'bulan': {
+                    month: {
+                        'kunjungan': {'maintenance': 0, 'akuisisi': 0, 'prospek': 0, 'total': 0},
+                        'absensi': {'Hadir': 0, 'Terlambat': 0}
+                    } for month in range(1, 13)
+                }
+            }
+        if bulan and kegiatan:
+            bulan = int(bulan)
+            if 1 <= bulan <= 12:
+                report[username]['bulan'][bulan]['kunjungan'][kegiatan] = jumlah
+                report[username]['bulan'][bulan]['kunjungan']['total'] += jumlah
+
     # Olah data absensi
     for username, bulan, status, jumlah in absensi_summary:
         if username not in report:
             report[username] = {
-                month: {
-                    'kunjungan': {'maintenance': 0, 'akuisisi': 0, 'prospek': 0, 'total': 0},
-                    'absensi': {'Hadir': 0, 'Terlambat': 0}
-                } for month in range(1, 13)
+                'name': username_to_name.get(username, ""),
+                'bulan': {
+                    month: {
+                        'kunjungan': {'maintenance': 0, 'akuisisi': 0, 'prospek': 0, 'total': 0},
+                        'absensi': {'Hadir': 0, 'Terlambat': 0}
+                    } for month in range(1, 13)
+                }
             }
-
         if bulan and status:
             bulan = int(bulan)
-            if 1 <= bulan <= 12 and status in report[username][bulan]['absensi']:
-                report[username][bulan]['absensi'][status] = jumlah
+            if 1 <= bulan <= 12 and status in report[username]['bulan'][bulan]['absensi']:
+                report[username]['bulan'][bulan]['absensi'][status] = jumlah
 
     return jsonify({
         'periode_tahun': year,
-        'summary_tahunan_per_sales': report
+        'summary_tahunan_per_sales': report,
+        'total_sales': total_sales
     }), 200

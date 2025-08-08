@@ -47,6 +47,8 @@ def create_absensi():
         tanggal=tanggal_hari_ini
     ).first()
 
+    
+
     if existing_absen:
         return jsonify({'message': 'udah absen hari ini bos'}), 409
 

@@ -74,6 +74,15 @@ def delete_kunjungan_route(id):
 def get_kunjungan_by_username_route():
     return kunjungan_controller.get_kunjungan_by_username()
 
+#--- rute kunjungan untuk admin ---
+@bp.route('/admin/kunjungan-sales/<int:username>', methods=['GET'])
+@jwt_required()
+@admin_required()  # Hanya admin yang bisa akses
+def get_kunjungan_by_sales_route(username):
+    return kunjungan_controller.get_kunjungan_by_username_for_admin(username)
+
+
+
 
 # --- Rute untuk Export ---
 @bp.route('/export/absensi', methods=['GET'])
@@ -87,6 +96,8 @@ def export_absensi_route():
 @admin_required()
 def export_kunjungan_route():
     return export_controller.export_kunjungan_to_excel()
+
+
 
 
 # --- Rute Laporan Sales (Tidak Berubah) ---
@@ -110,6 +121,17 @@ def yearly_report_route(year):
 @jwt_required() # Pastikan hanya user yang sudah login bisa akses
 def get_profile_route():
     return profile_controller.get_my_profile()
+
+@bp.route('/profile/update', methods=['PUT'])
+@jwt_required()
+def update_profile_route():
+    return profile_controller.update_my_profile()
+
+@bp.route('/profile/change-password', methods=['PUT'])
+@jwt_required()
+def change_password_route():
+    return profile_controller.change_my_password()
+
 
 @bp.route('/forgot-password', methods=['POST'])
 def forgot_password_route():

@@ -11,9 +11,9 @@ def register_user():
     email = data.get('email')
     telpon = data.get('telpon', None)  # Telepon bisa diisi atau tidak
     lokasi = data.get('lokasi', None)  # Lokasi bisa diisi atau tidak
-    password = data.get('password')
     role = data.get('role', 'sales') # default role is 'sales'
 
+    password = "12345" 
     if not username or not password or not email:
         return jsonify({"msg": "Username, password dan email dibutuhkan"}), 400
 
@@ -58,10 +58,16 @@ def get_all_users():
     if claims.get('role') != 'admin':
         return jsonify({"msg": "Hanya admin yang bisa mengakses fitur ini"}), 403
 
+
     users_sales = User.query.filter_by(role='sales').all()
-    
-    # Kembalikan daftar user yang sudah diubah menjadi dictionary
+    total_sales = User.query.filter_by(role='sales').count()
+
+    if not users_sales:
+        return jsonify({"msg": "Tidak ada user sales ditemukan"}), 404
+
+    print(f"Total sales: {total_sales}")
     return jsonify([user.to_dict() for user in users_sales]), 200
+
 
 
 def delete_user(username):
