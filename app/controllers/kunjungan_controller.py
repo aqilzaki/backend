@@ -85,7 +85,7 @@ def create_kunjungan():
         db.session.add(new_kunjungan)
         db.session.commit()
         return jsonify({"message": "Kunjungan berhasil ditambahkan!", "kunjungan": new_kunjungan.to_dict()}), 201
-
+    
     except Exception as e:
         db.session.rollback() # Rollback jika ada error database
         print(f"Error saat membuat kunjungan: {e}") # Log error untuk debugging
