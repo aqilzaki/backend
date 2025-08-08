@@ -25,10 +25,6 @@ def create_kunjungan():
         # 2. Coba cari berdasarkan id_outlet terlebih dahulu
         outlet = Outlet.query.filter_by(id_outlet=outlet_input).first()
         
-        # 3. Jika tidak ketemu, coba cari berdasarkan nama_outlet
-        if not outlet:
-            outlet = Outlet.query.filter_by(nama_outlet=outlet_input).first()
-
         # 4. Jika masih tidak ditemukan, buat outlet baru
         if not outlet:
             # Logika untuk membuat id_outlet baru secara otomatis

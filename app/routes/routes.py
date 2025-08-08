@@ -1,5 +1,5 @@
 from flask import Blueprint
-from app.controllers import tracking_controller, report_controller, auth_controller,  absensi_controller, kunjungan_controller, export_controller, profile_controller
+from app.controllers import outlet_controller, tracking_controller, report_controller, auth_controller,  absensi_controller, kunjungan_controller, export_controller, profile_controller
 from flask_jwt_extended import jwt_required
 from app.decorators import admin_required
 
@@ -204,3 +204,35 @@ def daily_tracking_route(username, date_str):
 def daily_tracking_all_route(date_str):
     return tracking_controller.get_daily_tracking_all_data(date_str)
 
+
+# --- Rute CRUD untuk Outlet (KHUSUS ADMIN) ---
+
+@bp.route('/outlets', methods=['POST'])
+@jwt_required()
+@admin_required()
+def create_outlet_route():
+    return outlet_controller.create_outlet()
+
+@bp.route('/outlets', methods=['GET'])
+@jwt_required()
+
+def get_all_outlets_route():
+    return outlet_controller.get_all_outlets()
+
+@bp.route('/outlets/<int:outlet_id>', methods=['GET'])
+@jwt_required()
+@admin_required()
+def get_outlet_by_id_route(outlet_id):
+    return outlet_controller.get_outlet_by_id(outlet_id)
+
+@bp.route('/outlets/<int:outlet_id>', methods=['PUT'])
+@jwt_required()
+@admin_required()
+def update_outlet_route(outlet_id):
+    return outlet_controller.update_outlet(outlet_id)
+
+@bp.route('/outlets/<int:outlet_id>', methods=['DELETE'])
+@jwt_required()
+@admin_required()
+def delete_outlet_route(outlet_id):
+    return outlet_controller.delete_outlet(outlet_id)

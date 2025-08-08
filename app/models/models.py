@@ -44,6 +44,7 @@ class Outlet(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'id_outlet': self.id_outlet,
             'nama_outlet': self.nama_outlet,
             'lokasi': self.lokasi,
             'created_at': self.created_at.isoformat() if self.created_at else None
