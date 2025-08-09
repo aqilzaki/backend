@@ -44,6 +44,7 @@ class Outlet(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'id_outlet': self.id_outlet,
             'nama_outlet': self.nama_outlet,
             'lokasi': self.lokasi,
             'created_at': self.created_at.isoformat() if self.created_at else None
@@ -83,7 +84,8 @@ class Kunjungan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     id_mr = db.Column(db.String(20), nullable=False)
     no_visit = db.Column(db.Integer, nullable=False)
-    id_outlet = db.Column(db.String(20), db.ForeignKey('outlet.id_outlet'), nullable=False)
+    id_outlet = db.Column(db.String(20), db.ForeignKey('outlet.id_outlet'), nullable=True)
+    nama_prospek = db.Column(db.String(100), nullable=True)
     lokasi = db.Column(db.String(255))
     foto_kunjungan_path = db.Column(db.String(255))
     kegiatan = db.Column(db.Enum('maintenance', 'akuisisi', 'prospek'), nullable=False)
@@ -106,7 +108,7 @@ class Kunjungan(db.Model):
             'id_mr': self.id_mr,
             'no_visit': self.no_visit,
             'id_outlet': self.id_outlet,
-            'nama_outlet': self.outlet.nama_outlet if self.outlet else None, # Use 'outlet' (lowercase)
+            'nama_outlet': self.outlet.nama_outlet if self.outlet else self.nama_prospek,
             'lokasi': self.lokasi,
             'foto_kunjungan_path': foto_url,
             'kegiatan': self.kegiatan,
