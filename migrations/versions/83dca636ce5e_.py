@@ -1,14 +1,8 @@
-"""Add Outlet table and link to Kunjungan
+"""empty message
 
-<<<<<<< HEAD:migrations/versions/e5f41e66b326_.py
-Revision ID: e5f41e66b326
+Revision ID: 83dca636ce5e
 Revises: 
-Create Date: 2025-08-04 11:06:44.331490
-=======
-Revision ID: db3064c1c7aa
-Revises: 
-Create Date: 2025-08-08 09:40:41.381138
->>>>>>> origin/main:migrations/versions/db3064c1c7aa_add_outlet_table_and_link_to_kunjungan.py
+Create Date: 2025-08-08 11:05:41.803941
 
 """
 from alembic import op
@@ -16,11 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-<<<<<<< HEAD:migrations/versions/e5f41e66b326_.py
-revision = 'e5f41e66b326'
-=======
-revision = 'db3064c1c7aa'
->>>>>>> origin/main:migrations/versions/db3064c1c7aa_add_outlet_table_and_link_to_kunjungan.py
+revision = '83dca636ce5e'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -79,23 +69,6 @@ def upgrade():
     sa.ForeignKeyConstraint(['id_outlet'], ['outlet.id_outlet'], ),
     sa.PrimaryKeyConstraint('id')
     )
-<<<<<<< HEAD:migrations/versions/e5f41e66b326_.py
-    op.create_table('user',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('username', sa.String(length=80), nullable=False),
-    sa.Column('name', sa.String(length=100), nullable=True),
-    sa.Column('email', sa.String(length=120), nullable=True),
-    sa.Column('password_hash', sa.String(length=128), nullable=False),
-    sa.Column('telpon', sa.String(length=20), nullable=True),
-    sa.Column('lokasi', sa.String(length=255), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('role', sa.String(length=20), nullable=False),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('email'),
-    sa.UniqueConstraint('username')
-    )
-=======
->>>>>>> origin/main:migrations/versions/db3064c1c7aa_add_outlet_table_and_link_to_kunjungan.py
     # ### end Alembic commands ###
 
 
