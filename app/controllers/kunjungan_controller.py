@@ -11,56 +11,64 @@ from flask_jwt_extended import get_jwt_identity, jwt_required, get_jwt
 # Di dalam file: app/controllers/kunjungan_controller.py
 
 @jwt_required()
+
 def create_kunjungan():
-    """Membuat data kunjungan baru dengan validasi dan pencarian outlet yang pintar."""
+    """Membuat data kunjungan baru dengan logika untuk prospek."""
     try:
         current_user_id = get_jwt_identity()
         
-        # 1. Ambil input outlet dari form (bisa berupa ID atau Nama)
-        outlet_input = request.form.get('nama_outlet')
-        if not outlet_input:
-            return jsonify({"message": "Nama atau ID Outlet wajib diisi."}), 400
-
-        # --- LOGIKA PENCARIAN OUTLET BARU ---
-        # 2. Coba cari berdasarkan id_outlet terlebih dahulu
-        outlet = Outlet.query.filter_by(id_outlet=outlet_input).first()
+        # Ambil data dari form
+        kegiatan = request.form.get('kegiatan')
+        outlet_input = request.form.get('nama_outlet') # Bisa ID atau Nama
         
-        # 4. Jika masih tidak ditemukan, buat outlet baru
-        if not outlet:
-            # Logika untuk membuat id_outlet baru secara otomatis
-            last_outlet = Outlet.query.order_by(Outlet.id.desc()).first()
-            if last_outlet and last_outlet.id_outlet.startswith('TM'):
-                last_id_num = int(last_outlet.id_outlet[2:])
-                new_id_num = last_id_num + 1
-                new_id_outlet = f"TM{new_id_num:04d}"
-            else:
-                # Jika ini adalah outlet pertama di database
-                new_id_outlet = "TM0001"
+        if not outlet_input or not kegiatan:
+            return jsonify({"message": "Nama/ID Outlet dan Kegiatan wajib diisi."}), 400
 
-            outlet = Outlet(
-                id_outlet=new_id_outlet,
-                nama_outlet=outlet_input # Input dari user dianggap sebagai nama
-            )
-            db.session.add(outlet)
-        # --- AKHIR LOGIKA PENCARIAN ---
+        outlet_id_to_save = None
+        nama_prospek_to_save = None
 
-        # 5. Lakukan Validasi Kunjungan Mingguan
-        satu_minggu_lalu = datetime.now() - timedelta(days=7)
-        kunjungan_terakhir = Kunjungan.query.filter(
-            Kunjungan.id_mr == current_user_id,
-            Kunjungan.id_outlet == outlet.id_outlet,
-            Kunjungan.tanggal_input > satu_minggu_lalu
-        ).first()
+        # --- LOGIKA BARU BERDASARKAN KEGIATAN ---
+        if kegiatan == 'prospek':
+            # Jika prospek, kita tidak mencari/membuat outlet.
+            # Kita hanya simpan namanya di kolom nama_prospek.
+            nama_prospek_to_save = outlet_input
+        
+        else: # Jika maintenance atau akuisisi
+            # Gunakan logika cari atau buat outlet yang sudah ada
+            outlet = Outlet.query.filter_by(id_outlet=outlet_input).first()
+            if not outlet:
+                outlet = Outlet.query.filter_by(nama_outlet=outlet_input).first()
 
-        if kunjungan_terakhir:
-            return jsonify({
-                "message": f"Anda sudah mengunjungi outlet '{outlet.nama_outlet}' dalam seminggu terakhir."
-            }), 409
+            if not outlet:
+                # Jika outlet belum ada, buat baru
+                last_outlet = Outlet.query.order_by(Outlet.id.desc()).first()
+                if last_outlet and last_outlet.id_outlet.startswith('TM'):
+                    last_id_num = int(last_outlet.id_outlet[2:])
+                    new_id_num = last_id_num + 1
+                    new_id_outlet = f"TM{new_id_num:04d}"
+                else:
+                    new_id_outlet = "TM0001"
+                
+                outlet = Outlet(id_outlet=new_id_outlet, nama_outlet=outlet_input)
+                db.session.add(outlet)
+            
+            # Lakukan validasi mingguan HANYA untuk maintenance/akuisisi
+            satu_minggu_lalu = datetime.now() - timedelta(days=7)
+            kunjungan_terakhir = Kunjungan.query.filter(
+                Kunjungan.id_mr == current_user_id,
+                Kunjungan.id_outlet == outlet.id_outlet,
+                Kunjungan.tanggal_input > satu_minggu_lalu
+            ).first()
 
+            if kunjungan_terakhir:
+                return jsonify({
+                    "message": f"Anda sudah mengunjungi outlet '{outlet.nama_outlet}' dalam seminggu terakhir."
+                }), 409
+            
+            outlet_id_to_save = outlet.id_outlet
         # ... (Sisa kode untuk mengambil data form dan menyimpan kunjungan tidak berubah) ...
         no_visit = request.form.get('no_visit')
         lokasi = request.form.get('lokasi')
-        kegiatan = request.form.get('kegiatan')
         kompetitor = request.form.get('kompetitor')
         rata_rata_topup = request.form.get('rata_rata_topup')
         potensi_topup = request.form.get('potensi_topup')
@@ -81,8 +89,9 @@ def create_kunjungan():
         
         new_kunjungan = Kunjungan(
             id_mr=current_user_id,
-            id_outlet=outlet.id_outlet,
-            no_visit=int(no_visit),
+            id_outlet=outlet_id_to_save,
+            nama_prospek=nama_prospek_to_save,
+            no_visit=int(no_visit) if no_visit else None,
             lokasi=lokasi,
             kegiatan=kegiatan,
             kompetitor=kompetitor,
@@ -101,7 +110,7 @@ def create_kunjungan():
         db.session.rollback()
         print(f"Error saat membuat kunjungan: {e}")
         return jsonify({"message": "Terjadi kesalahan server saat memproses permintaan."}), 500
-        
+    
 @jwt_required()
 def get_all_kunjungan():
     """Mengambil semua data kunjungan, dikelompokkan per tahun, bulan, dan sales."""
@@ -151,7 +160,7 @@ def update_kunjungan(id):
     data = request.json
 
     for key, value in data.items():
-        if hasattr(kunjungan, key) and key not in ['id', 'id_mr', 'outlet_id']:
+        if hasattr(kunjungan, key) and key not in ['id', 'id_mr', 'id_outlet']:
             setattr(kunjungan, key, value)
 
     db.session.commit()

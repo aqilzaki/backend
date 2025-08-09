@@ -40,17 +40,24 @@ def create_outlet():
     return jsonify(new_outlet.to_dict()), 201
 
 def get_all_outlets():
-    """Mengambil daftar semua outlet (Admin Only)."""
-    # Menambahkan fitur search/filter berdasarkan nama
-    search_term = request.args.get('search', '')
-    
-    query = Outlet.query
-    if search_term:
-        query = query.filter(Outlet.nama_outlet.ilike(f'%{search_term}%'))
+    """Mengambil semua data outlet (ID dan Nama) yang unik dari database."""
+    try:
+        # Query untuk mengambil ID dan Nama outlet unik
+        # Kita kelompokkan berdasarkan ID untuk memastikan setiap outlet hanya muncul sekali
+        outlets = db.session.query(
+            Outlet.id_outlet, 
+            Outlet.nama_outlet,
+            Outlet.lokasi
+        ).distinct(Outlet.id_outlet).all()
         
-    outlets = query.order_by(Outlet.nama_outlet.asc()).all()
-    
-    return jsonify([o.to_dict() for o in outlets]), 200
+        # Ubah hasil query menjadi list of objects
+        outlet_list = [
+            {"id": outlet.id_outlet, "name": outlet.nama_outlet, "lokasi":outlet.lokasi} for outlet in outlets
+        ]
+        
+        return jsonify(outlet_list), 200
+    except Exception as e:
+        return jsonify({"msg": "Gagal mengambil data outlet", "error": str(e)}), 500
 
 def get_outlet_by_id(outlet_id):
     """Mengambil satu outlet berdasarkan ID (int) atau id_outlet (string)."""
