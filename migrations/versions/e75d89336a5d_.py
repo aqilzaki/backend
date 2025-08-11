@@ -1,8 +1,8 @@
-"""Add Outlet table and link to Kunjungan
+"""empty message
 
-Revision ID: db3064c1c7aa
+Revision ID: e75d89336a5d
 Revises: 
-Create Date: 2025-08-08 09:40:41.381138
+Create Date: 2025-08-11 11:09:54.322181
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'db3064c1c7aa'
+revision = 'e75d89336a5d'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -26,6 +26,16 @@ def upgrade():
     sa.Column('status_absen', sa.String(length=20), nullable=True),
     sa.Column('lokasi', sa.String(length=255), nullable=True),
     sa.Column('foto_absen_path', sa.String(length=255), nullable=True),
+    sa.Column('keterangan', sa.Text(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('izin',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id_mr', sa.String(length=20), nullable=False),
+    sa.Column('tanggal_izin', sa.Date(), nullable=False),
+    sa.Column('keterangan', sa.Text(), nullable=True),
+    sa.Column('status_izin', sa.String(length=20), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
@@ -56,7 +66,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('id_mr', sa.String(length=20), nullable=False),
     sa.Column('no_visit', sa.Integer(), nullable=False),
-    sa.Column('id_outlet', sa.String(length=20), nullable=False),
+    sa.Column('id_outlet', sa.String(length=20), nullable=True),
+    sa.Column('nama_prospek', sa.String(length=100), nullable=True),
     sa.Column('lokasi', sa.String(length=255), nullable=True),
     sa.Column('foto_kunjungan_path', sa.String(length=255), nullable=True),
     sa.Column('kegiatan', sa.Enum('maintenance', 'akuisisi', 'prospek'), nullable=False),
@@ -77,5 +88,6 @@ def downgrade():
     op.drop_table('kunjungan')
     op.drop_table('user')
     op.drop_table('outlet')
+    op.drop_table('izin')
     op.drop_table('absensi')
     # ### end Alembic commands ###
