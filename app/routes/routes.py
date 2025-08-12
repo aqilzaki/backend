@@ -34,14 +34,11 @@ def get_izin_by_id_route(id):
 def create_izin_route():
     return izin_controller.create_izin()
 
-@bp.route('/izin/<int:id>', methods=['PUT'])
+@bp.route('/izin/<int:id>/<string:newStatus>', methods=['PUT'])
 @jwt_required()
 @admin_required()  # Hanya admin yang bisa akses
-def update_izin_status_route(id):
-    new_status = request.json.get('status')
-    if new_status not in ['approved', 'rejected']:
-        return jsonify({"msg": "Status harus 'approved' atau 'rejected'"}), 400
-    return izin_controller.update_izin_status(id, new_status)
+def update_izin_status_route(id,newStatus):
+    return izin_controller.update_izin_status(id, newStatus)
 
 @bp.route('/izin/<int:id>', methods=['DELETE'])
 @jwt_required()
@@ -254,7 +251,7 @@ def create_outlet_route():
 
 @bp.route('/outlets', methods=['GET'])
 @jwt_required()
-
+@admin_required()
 def get_all_outlets_route():
     return outlet_controller.get_all_outlets()
 

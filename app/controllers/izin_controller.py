@@ -30,11 +30,10 @@ def create_izin():
     """Membuat data baru untuk izin."""
     data = request.json
     username = get_jwt_identity()
-    claims = get_jwt()
 
-    name = claims.get('name')
-    if not name:
-        return jsonify({"msg": "Nama user tidak ditemukan dalam klaim JWT"}), 400
+    user_obj = User.query.filter_by(username=username).first()
+    if not user_obj:
+        return jsonify({"msg": "User tidak ditemukan"}), 404
     
     tanggal_izin = data.get('tanggal_izin')
     keterangan = data.get('keterangan')
@@ -48,12 +47,12 @@ def create_izin():
     if not keterangan:
         keterangan = None
     # Cek apakah user sudah mengajukan izin pada tanggal ini
-    existing_izin = Izin.query.filter_by(id_mr=username, tanggal_izin=tanggal_izin).first()
+    existing_izin = Izin.query.filter_by(id_mr=user_obj.username, tanggal_izin=tanggal_izin).first()
     if existing_izin:
         return jsonify({"msg": "Anda sudah mengajukan izin pada tanggal ini"}), 400
     # Buat objek Izin baru
     new_izin = Izin(
-        id_mr=username,
+        id_mr=user_obj.username,
         tanggal_izin=tanggal_izin,
         status_izin='pending',  # Status awal adalah 'pending'
         keterangan=keterangan
@@ -61,10 +60,10 @@ def create_izin():
     db.session.add(new_izin)
     db.session.commit()
     return jsonify({"msg": "Izin berhasil dibuat",
-                    'name': name,
+                    'name': user_obj.name,
                     "izin": new_izin.to_dict()}), 201
 
-def update_izin_status(id, new_status):
+def update_izin_status(id, newStatus):
     """
     Mengupdate status izin berdasarkan ID.
     Hanya admin yang bisa mengubah status izin.
@@ -75,10 +74,10 @@ def update_izin_status(id, new_status):
 
 
     izin = Izin.query.get_or_404(id)
-    if new_status not in ['approved', 'rejected']:
+    if newStatus not in ['approved', 'rejected']:
         return jsonify({"msg": "Status tidak valid, hanya bisa 'approved' atau 'rejected'"}), 400
 
-    izin.status_izin = new_status
+    izin.status_izin = newStatus
     db.session.commit()
     return jsonify({"msg": "Status izin berhasil diupdate", "izin": izin.to_dict()}), 200
 
