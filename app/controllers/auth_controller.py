@@ -13,15 +13,13 @@ def register_user():
     lokasi = data.get('lokasi', None)  # Lokasi bisa diisi atau tidak
     role = data.get('role', 'sales') # default role is 'sales'
 
-    password = "12345" 
+    password = "pass123" 
     if not username or not password :
         return jsonify({"msg": "ID_MR dan password dibutuhkan"}), 400
 
     if User.query.filter_by(username=username).first():
         return jsonify({"msg": "Username sudah ada"}), 400
     
-    if User.query.filter_by(email=email).first():
-        return jsonify({"msg": "email sudah ada"}), 400
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
     new_user = User(username=username, telpon=telpon, name=name, email=email, password_hash=hashed_password, role=role, lokasi=lokasi)
