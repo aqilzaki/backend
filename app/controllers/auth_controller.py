@@ -8,14 +8,14 @@ def register_user():
     data = request.get_json()
     username = data.get('username')
     name = data.get('name')
-    email = data.get('email')
+    email = data.get('email', None)
     telpon = data.get('telpon', None)  # Telepon bisa diisi atau tidak
     lokasi = data.get('lokasi', None)  # Lokasi bisa diisi atau tidak
     role = data.get('role', 'sales') # default role is 'sales'
 
     password = "12345" 
-    if not username or not password or not email:
-        return jsonify({"msg": "Username, password dan email dibutuhkan"}), 400
+    if not username or not password :
+        return jsonify({"msg": "ID_MR dan password dibutuhkan"}), 400
 
     if User.query.filter_by(username=username).first():
         return jsonify({"msg": "Username sudah ada"}), 400
