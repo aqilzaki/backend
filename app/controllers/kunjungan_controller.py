@@ -157,7 +157,7 @@ def get_kunjungan_by_id(id):
 def update_kunjungan(id):
     """Memperbarui data kunjungan."""
     kunjungan = Kunjungan.query.get_or_404(id)
-    data = request.json # Asumsi update tidak menggunakan multipart/form-data
+    data = request.json
 
     for key, value in data.items():
         if hasattr(kunjungan, key) and key not in ['id', 'id_mr', 'id_outlet']:
@@ -176,7 +176,7 @@ def delete_kunjungan(id):
             upload_folder = current_app.config['UPLOAD_FOLDER']
             os.remove(os.path.join(upload_folder, kunjungan.foto_kunjungan_path))
         except OSError as e:
-            print(f"Error deleting file: {e.strerror}") # Log error jika gagal hapus file
+            print(f"Error deleting file: {e.strerror}")
 
     db.session.delete(kunjungan)
     db.session.commit()

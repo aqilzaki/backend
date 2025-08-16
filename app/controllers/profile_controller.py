@@ -89,7 +89,7 @@ def forgot_password():
                   recipients=[user.email])
     
     # Link ini idealnya mengarah ke halaman frontend Anda
-    link = f"http://localhost:3000/reset-password?token={token}"
+    link = f"http://localhost:5173/reset-password?token={token}"
     msg.body = f"Untuk mereset password Anda, silakan klik link berikut. Link ini hanya berlaku selama 1 jam ya:\n\n{link}"
 
     try:

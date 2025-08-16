@@ -1,7 +1,9 @@
 from flask import Blueprint
-from app.controllers import outlet_controller, tracking_controller, report_controller, auth_controller,  absensi_controller, kunjungan_controller, export_controller, profile_controller
+from app.controllers import outlet_controller, izin_controller, tracking_controller, report_controller, auth_controller,  absensi_controller, kunjungan_controller, export_controller, profile_controller
 from flask_jwt_extended import jwt_required
 from app.decorators import admin_required
+import os
+from flask import jsonify, request, current_app
 
 bp = Blueprint('main', __name__)
 
@@ -16,7 +18,41 @@ def register_route():
 def login_route():
     return auth_controller.login_user()
 
+# --- Rute untuk Izin ---
+@bp.route('/izin', methods=['GET'])
+@jwt_required()
+def get_all_izin_route():
+    return izin_controller.get_all_izin()
+
+@bp.route('/izin/<int:id>', methods=['GET'])
+@jwt_required()
+def get_izin_by_id_route(id):
+    return izin_controller.get_izin_by_id(id)
+
+@bp.route('/izin', methods=['POST'])
+@jwt_required() 
+def create_izin_route():
+    return izin_controller.create_izin()
+
+@bp.route('/izin/<int:id>/<string:newStatus>', methods=['PUT'])
+@jwt_required()
+@admin_required()  # Hanya admin yang bisa akses
+def update_izin_status_route(id,newStatus):
+    return izin_controller.update_izin_status(id, newStatus)
+
+@bp.route('/izin/<int:id>', methods=['DELETE'])
+@jwt_required()
+@admin_required()  # Hanya admin yang bisa akses
+def delete_izin_route(id):
+    return izin_controller.delete_izin(id)
+
+
 # --- Rute untuk Absensi ---
+@bp.route('/absensi/personal', methods=['GET'])
+@jwt_required()
+def absensi_personal_route():
+    return absensi_controller.get_all_absensi_by_user()
+
 @bp.route('/absensi', methods=['POST'])
 @jwt_required()
 def create_absensi_route():
@@ -215,7 +251,6 @@ def create_outlet_route():
 
 @bp.route('/outlets', methods=['GET'])
 @jwt_required()
-
 def get_all_outlets_route():
     return outlet_controller.get_all_outlets()
 

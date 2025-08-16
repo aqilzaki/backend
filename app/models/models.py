@@ -7,7 +7,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=True)  # Tambahkan kolom nama
-    email = db.Column(db.String(120), unique=True, nullable=True)
+    email = db.Column(db.String(120), nullable=True )  # Tambahkan kolom email
     password_hash = db.Column(db.String(128), nullable=False)
     telpon = db.Column(db.String(20), nullable=True)  # Tambahkan kolom telepon
     lokasi = db.Column(db.String(255), nullable=True)  # Lokasi user, bisa diisi jika diperlukan
@@ -19,7 +19,8 @@ class User(db.Model):
     # 'id_mr' di Absensi/Kunjungan akan merujuk ke 'username' di tabel User
     absensi = db.relationship('Absensi', backref='user', lazy=True, foreign_keys='Absensi.id_mr', primaryjoin="User.username==Absensi.id_mr")
     kunjungan = db.relationship('Kunjungan', backref='user', lazy=True, foreign_keys='Kunjungan.id_mr', primaryjoin="User.username==Kunjungan.id_mr")
-
+    izin = db.relationship('Izin', backref='user', lazy=True, foreign_keys='Izin.id_mr', primaryjoin="User.username==Izin.id_mr")
+    
     def to_dict(self):
         return {
             'id': self.id,
@@ -50,6 +51,26 @@ class Outlet(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
+class Izin(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    id_mr = db.Column(db.String(20), db.ForeignKey('user.username'), nullable=False)
+    tanggal_izin = db.Column(db.Date, nullable=False)
+    keterangan = db.Column(db.Text, nullable=True)
+    status_izin = db.Column(db.String(20), default='pending')  # Status izin, bisa 'pending', 'approved', atau 'rejected'
+    foto_absen_path = db.Column(db.String(255), nullable=True)  # Foto absen, bisa diisi jika ada
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.user.name if self.user else None,  # Ambil nama dari relasi User
+            'id_mr': self.id_mr,
+            'tanggal_izin': self.tanggal_izin.isoformat() if self.tanggal_izin else None,
+            'keterangan': self.keterangan,
+            'status_izin': self.status_izin,
+            'foto_absen_path': self.foto_absen_path,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
 class Absensi(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     id_mr = db.Column(db.String(20), nullable=False)
@@ -58,6 +79,7 @@ class Absensi(db.Model):
     status_absen = db.Column(db.String(20))
     lokasi = db.Column(db.String(255))
     foto_absen_path = db.Column(db.String(255))
+    keterangan = db.Column(db.Text, nullable=True)  # Tambahkan kolom keterangan
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -76,6 +98,7 @@ class Absensi(db.Model):
             'status_absen': self.status_absen,
             'lokasi': self.lokasi,
             'foto_absen_path': foto_url,
+            'keterangan': self.keterangan,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 

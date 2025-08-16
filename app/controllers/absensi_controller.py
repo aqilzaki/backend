@@ -3,7 +3,9 @@ from werkzeug.utils import secure_filename
 import os
 from app import db
 from app.models.models import Absensi
-from datetime import datetime, time
+from datetime import datetime, time as dt_time # Ganti nama import time
+
+import time
 import pytz
 from flask_jwt_extended import get_jwt_identity, get_jwt
 
@@ -26,64 +28,57 @@ def get_absensi_by_id(id):
     return jsonify(absen.to_dict()), 200
 
 def create_absensi():
-    """
-    Membuat data absensi baru dengan validasi dan zona waktu yang benar dan konsisten.
-    """
-    current_user_username = get_jwt_identity()
+    """Membuat data absensi baru (Hadir/Terlambat) dari sales."""
+    try:
+        username = get_jwt_identity()
+        
+        # Ambil data dari form-data
+        latitude = request.form.get('latitude')
+        longitude = request.form.get('longitude')
+        foto_absen = request.files.get('foto_absen')
 
-    # 1. Dapatkan waktu saat ini. Karena koneksi DB sudah di-set, kita bisa pakai waktu server.
-    #    Namun, menggunakan pytz tetap praktik terbaik untuk kejelasan.
-    zona_waktu_jakarta = pytz.timezone('Asia/Jakarta')
-    waktu_sekarang_obj = datetime.now(zona_waktu_jakarta)
+        if not latitude or not longitude or not foto_absen:
+            return jsonify({"msg": "Lokasi dan Foto wajib untuk absensi."}), 400
+
+        # Gunakan zona waktu Asia/Jakarta (WIB)
+        tz = pytz.timezone('Asia/Jakarta')
+        today = datetime.now(tz).date()
+        
+        # Cek apakah user sudah absen hari ini
+        existing_absensi = Absensi.query.filter_by(id_mr=username, tanggal=today).first()
+        if existing_absensi:
+            return jsonify({"msg": f"Anda sudah melakukan absensi hari ini."}), 400
+
+        # Proses penyimpanan file foto
+        filename = f"absen_{username}_{int(time.time())}.jpg"
+        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        foto_absen.save(file_path)
+
+        # Tentukan status Hadir atau Terlambat berdasarkan waktu WIB
+        waktu_absen_wib = datetime.now(tz).time()
+        jam_masuk = datetime.strptime('08:30:00', '%H:%M:%S').time()
+        status = 'Hadir' if waktu_absen_wib <= jam_masuk else 'Terlambat'
+        
+        # Buat objek Absensi baru
+        new_absensi = Absensi(
+            id_mr=username,
+            tanggal=today,
+            waktu_absen=waktu_absen_wib,
+            status_absen=status,
+            lokasi=f"{latitude},{longitude}",
+            foto_absen_path=filename
+        )
+
+        db.session.add(new_absensi)
+        db.session.commit()
+
+        return jsonify(new_absensi.to_dict()), 201
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error di create_absensi: {e}")
+        return jsonify({"msg": "Terjadi kesalahan di server."}), 500
     
-    # 2. Ekstrak tanggal dan waktu untuk digunakan di semua logika
-    tanggal_hari_ini = waktu_sekarang_obj.date()
-    waktu_saat_ini = waktu_sekarang_obj.time()
-
-    # 3. VALIDASI SEKALI SEHARI (DIJAMIN BERFUNGSI)
-    #    Mencari absensi berdasarkan username DAN tanggal yang sudah benar (WIB).
-    existing_absen = Absensi.query.filter_by(
-        id_mr=current_user_username,
-        tanggal=tanggal_hari_ini
-    ).first()
-
-    
-
-    if existing_absen:
-        return jsonify({'message': 'udah absen hari ini bos'}), 409
-
-    # 4. Lanjutkan proses jika validasi lolos
-    if 'foto_absen' not in request.files:
-        return jsonify({'message': 'File foto_absen tidak ditemukan'}), 400
-
-    file = request.files['foto_absen']
-    if file.filename == '':
-        return jsonify({'message': 'Tidak ada file yang dipilih'}), 400
-
-    filename = secure_filename(file.filename)
-    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-    file.save(file_path)
-
-    # 5. Tentukan status berdasarkan waktu yang sudah benar
-    batas_waktu_terlambat = time(9, 0, 0)
-    status = 'Terlambat' if waktu_saat_ini > batas_waktu_terlambat else 'Hadir'
-
-    # 6. Buat objek Absensi baru dengan data yang eksplisit dan konsisten
-    new_absen = Absensi(
-        id_mr=current_user_username,
-        status_absen=status,
-        foto_absen_path=filename,
-        # Lokasi bisa diisi dari request
-        tanggal=tanggal_hari_ini,      # Gunakan tanggal yang sudah kita definisikan
-        waktu_absen=waktu_saat_ini,    # Gunakan waktu yang sudah kita definisikan
-        created_at=waktu_sekarang_obj  # Gunakan objek datetime lengkap
-    )
-
-    db.session.add(new_absen)
-    db.session.commit()
-    
-    return jsonify(new_absen.to_dict()), 201
-
 def update_absensi(id):
     """Memperbarui data absensi."""
     absen = Absensi.query.get_or_404(id)
@@ -111,3 +106,11 @@ def delete_absensi(id):
     db.session.delete(absen)
     db.session.commit()
     return jsonify({'message': f'Absensi dengan ID {id} berhasil dihapus.'}), 200
+
+
+def get_all_absensi_by_user():
+    """Mengambil semua data absensi untuk user yang sedang login."""
+    username = get_jwt_identity()
+    absensi_list = Absensi.query.filter_by(id_mr=username).all()
+    
+    return jsonify([absen.to_dict() for absen in absensi_list]), 200

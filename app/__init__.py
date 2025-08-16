@@ -8,6 +8,9 @@ from flask_cors import CORS
 from flask_mail import Mail
 
 import os
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -23,6 +26,7 @@ def create_app():
     
     # Konfigurasi aplikasi
     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:@localhost/absensi_sales'
+    #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://teke5124_tekmo:Tekno_123@localhost/teke5124_absensi_sales'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     # Ini memaksa koneksi database untuk menggunakan zona waktu +07:00 (WIB)
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
@@ -60,4 +64,4 @@ def create_app():
     with app.app_context():
         from .models import models
 
-    return app
+    return app  
