@@ -18,6 +18,12 @@ def register_route():
 def login_route():
     return auth_controller.login_user()
 
+@bp.route('/update_password_by_sales/<username>', methods=['POST'])
+@jwt_required()
+@admin_required()  # Hanya admin yang bisa akses
+def update_password_by_admin_route(username):   
+    return auth_controller.update_password(username)
+
 # --- Rute untuk Izin ---
 @bp.route('/izin', methods=['GET'])
 @jwt_required()

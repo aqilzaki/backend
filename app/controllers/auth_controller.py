@@ -80,3 +80,25 @@ def delete_user(username):
     db.session.commit()
     
     return jsonify({"msg": f"User {username} berhasil dihapus"}), 200
+
+def update_password(username):
+    """Mengubah password user berdasarkan username."""
+    claims = get_jwt()
+
+    if claims.get('role') != 'admin':
+        return jsonify({"msg": "Hanya admin yang bisa mengubah password user"}), 403
+
+    user = User.query.filter_by(username=username).first_or_404()
+    data = request.get_json()
+    new_password = data.get('new_password')
+
+    if not new_password:
+        return jsonify({"msg": "Password baru dibutuhkan"}), 400
+
+    # Buat hash baru untuk password
+    hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    user.password_hash = hashed_password
+    
+    db.session.commit()
+
+    return jsonify({"msg": f"Password untuk user {username} berhasil diubah"}), 200
