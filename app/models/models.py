@@ -17,8 +17,8 @@ class User(db.Model):
 
     # Relasi ke Absensi dan Kunjungan
     # 'id_mr' di Absensi/Kunjungan akan merujuk ke 'username' di tabel User
-    absensi = db.relationship('Absensi', backref='user', lazy=True, foreign_keys='Absensi.id_mr', primaryjoin="User.username==Absensi.id_mr")
-    kunjungan = db.relationship('Kunjungan', backref='user', lazy=True, foreign_keys='Kunjungan.id_mr', primaryjoin="User.username==Kunjungan.id_mr")
+    absensi = db.relationship('Absensi', backref='user', lazy=True, foreign_keys='Absensi.id_mr', primaryjoin="User.username==Absensi.id_mr",cascade="all, delete")
+    kunjungan = db.relationship('Kunjungan', backref='user', lazy=True, foreign_keys='Kunjungan.id_mr', primaryjoin="User.username==Kunjungan.id_mr",cascade="all, delete")
     izin = db.relationship('Izin', backref='user', lazy=True, foreign_keys='Izin.id_mr', primaryjoin="User.username==Izin.id_mr")
     
     def to_dict(self):
@@ -73,7 +73,7 @@ class Izin(db.Model):
         }
 class Absensi(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    id_mr = db.Column(db.String(20), nullable=False)
+    id_mr = db.Column(db.String(20), db.ForeignKey('user.username'), nullable=False)
     tanggal = db.Column(db.Date, default=datetime.utcnow().date)
     waktu_absen = db.Column(db.Time, default=datetime.utcnow().time)
     status_absen = db.Column(db.String(20))
@@ -105,7 +105,7 @@ class Absensi(db.Model):
 
 class Kunjungan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    id_mr = db.Column(db.String(20), nullable=False)
+    id_mr = db.Column(db.String(20),db.ForeignKey('user.username'), nullable=False)
     no_visit = db.Column(db.Integer, nullable=False)
     id_outlet = db.Column(db.String(20), db.ForeignKey('outlet.id_outlet'), nullable=True)
     nama_prospek = db.Column(db.String(100), nullable=True)

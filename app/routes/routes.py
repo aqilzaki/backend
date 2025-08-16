@@ -24,13 +24,7 @@ def login_route():
 def update_password_by_admin_route(username):   
     return auth_controller.update_password(username)
 
-@bp.route('/delete_akun_sales/username', methods=['DELETE'])
-@jwt_required()
-@admin_required()  # Hanya admin yang bisa akses
-def delete_user(username):
-    return auth_controller.delete_user(username)
-
-# --- Rute untuk Izin ---
+#  --- Rute untuk Izin ---
 @bp.route('/izin', methods=['GET'])
 @jwt_required()
 def get_all_izin_route():

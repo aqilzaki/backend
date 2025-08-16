@@ -69,16 +69,17 @@ def get_all_users():
 
 
 def delete_user(username):
-    """Menghapus user berdasarkan username."""
+    """Menghapus user dengan username tertentu."""
     claims = get_jwt()
 
     if claims.get('role') != 'admin':
         return jsonify({"msg": "Hanya admin yang bisa menghapus user"}), 403
-    
+
     user = User.query.filter_by(username=username).first_or_404()
+    
     db.session.delete(user)
     db.session.commit()
-    
+
     return jsonify({"msg": f"User {username} berhasil dihapus"}), 200
 
 def update_password(username):
@@ -102,3 +103,14 @@ def update_password(username):
     db.session.commit()
 
     return jsonify({"msg": f"Password untuk user {username} berhasil diubah"}), 200
+
+def get_user_by_username(username):
+    """Mengambil data user berdasarkan username."""
+    claims = get_jwt()
+
+    if claims.get('role') != 'admin':
+        return jsonify({"msg": "Hanya admin yang bisa mengakses fitur ini"}), 403
+
+    user = User.query.filter_by(username=username).first_or_404()
+
+    return jsonify(user.to_dict()), 200
