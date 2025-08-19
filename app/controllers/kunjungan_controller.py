@@ -20,7 +20,8 @@ def create_kunjungan():
         # Ambil data dari form
         kegiatan = request.form.get('kegiatan')
         outlet_input = request.form.get('nama_outlet') # Bisa ID atau Nama
-        
+        if not outlet_input:
+            return jsonify({"message": "Nama/ID Outlet wajib diisi."}), 400
         if not outlet_input or not kegiatan:
             return jsonify({"message": "Nama/ID Outlet dan Kegiatan wajib diisi."}), 400
 
@@ -66,14 +67,21 @@ def create_kunjungan():
                 }), 409
             
             outlet_id_to_save = outlet.id_outlet
-        # ... (Sisa kode untuk mengambil data form dan menyimpan kunjungan tidak berubah) ...
+        # --- AKHIR LOGIKA BARU ---
+        # Ambil data tambahan dari form
         no_visit = request.form.get('no_visit')
         lokasi = request.form.get('lokasi')
         kompetitor = request.form.get('kompetitor')
-        rata_rata_topup = request.form.get('rata_rata_topup')
-        potensi_topup = request.form.get('potensi_topup')
-        presentase_pemakaian = request.form.get('presentase_pemakaian')
+        rata_rata_topup = float(request.form.get("rata_rata_topup", 0))
+        potensi_topup = float(request.form.get("potensi_topup", 0))
         issue = request.form.get('issue')
+
+        # Hitung presentase pemakaian
+        if not rata_rata_topup or not potensi_topup:
+            presentase_pemakaian = None
+        else:
+            presentase_pemakaian = ((potensi_topup - rata_rata_topup) / rata_rata_topup) * 100
+        
 
         if not all([no_visit, lokasi, kegiatan]):
             return jsonify({"message": "Data wajib (No. Kunjungan, Lokasi, Kegiatan) tidak lengkap."}), 400
