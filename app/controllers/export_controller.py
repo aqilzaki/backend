@@ -91,16 +91,6 @@ def export_kunjungan_to_excel():
 
         data_to_export = []
         for idx, k in enumerate(kunjungan_list, 1):
-            # Ambil koordinat dari k.lokasi jika formatnya "lat,lon"
-            alamat = "-"
-            if k.lokasi and "," in k.lokasi:
-                try:
-                    lat, lon = map(str.strip, k.lokasi.split(","))
-                    alamat = get_address_from_coords(lat, lon)
-                except:
-                    alamat = k.lokasi
-            else:
-                alamat = k.lokasi or "-"
 
             data_to_export.append({
                 'No': idx,
@@ -108,8 +98,6 @@ def export_kunjungan_to_excel():
                 'ID Sales': k.id_mr,
                 'Nama Sales': k.user.name if k.user else '-',
                 'Outlet': k.outlet.nama_outlet if k.outlet else '-',
-                'Lokasi (Koordinat)': k.lokasi or '-',
-                'Alamat Jalan': alamat,
                 'Kegiatan': k.kegiatan or '-',
                 'Kompetitor': k.kompetitor or '-',
                 'Rata-rata Topup (Rp)': k.rata_rata_topup or 0,

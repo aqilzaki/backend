@@ -80,7 +80,7 @@ def create_kunjungan():
         if not rata_rata_topup or not potensi_topup:
             presentase_pemakaian = None
         else:
-            presentase_pemakaian = ((potensi_topup - rata_rata_topup) / rata_rata_topup) * 100
+            presentase_pemakaian = ((rata_rata_topup / potensi_topup  ) * 100) 
         
 
         if not all([no_visit, lokasi, kegiatan]):

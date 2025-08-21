@@ -93,6 +93,7 @@ def get_daily_tracking_all_data(date_str):
 
         # Tambahkan detail kunjungan ke dalam list
         route_per_sales[username]["kunjungan"].append({
+            "tes_gok_gok": kunjungan_dict.get('nama_outlet'),
             "nama_outlet": kunjungan_dict.get('nama_outlet'),
             "lokasi_koordinat": kunjungan_dict.get('lokasi'),
             "waktu_kunjungan": kunjungan.tanggal_input.strftime('%H:%M:%S'),
