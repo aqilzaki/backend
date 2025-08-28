@@ -3,34 +3,8 @@ import pandas as pd
 import io
 from datetime import datetime
 from app.models.models import Absensi, Kunjungan
-from geopy.geocoders import Nominatim
-from functools import lru_cache
-import time
 
-# Inisialisasi geolocator
-geolocator = Nominatim(user_agent="export_excel_app")
 
-# Cache hasil pencarian supaya koordinat yang sama tidak dipanggil ulang
-@lru_cache(maxsize=500)
-def get_address_from_coords(lat, lon):
-    try:
-        # Delay kecil untuk hindari rate limit OSM
-        time.sleep(1)
-        location = geolocator.reverse(f"{lat}, {lon}", timeout=10, language="id")
-        if location and location.address:
-            # Ambil hanya nama jalan jika tersedia
-            jalan = location.raw.get("address", {}).get("road")
-            if jalan:
-                return jalan
-            return location.address
-        return "-"
-    except Exception as e:
-        print(f"[ERROR] Gagal mendapatkan alamat: {e}")
-        return "-"
-
-# ===========================
-# Export Data Absensi
-# ===========================
 def export_absensi_to_excel():
     try:
         absensi_list = Absensi.query.all()
@@ -91,7 +65,6 @@ def export_kunjungan_to_excel():
 
         data_to_export = []
         for idx, k in enumerate(kunjungan_list, 1):
-
             data_to_export.append({
                 'No': idx,
                 'ID Kunjungan': k.id,

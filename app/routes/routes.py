@@ -18,7 +18,7 @@ def register_route():
 def login_route():
     return auth_controller.login_user()
 
-@bp.route('/update_password_by_sales/<username>', methods=['PUT'])
+@bp.route('/update_password_by_sales/<username>', methods=['POST'])
 @jwt_required()
 @admin_required()  # Hanya admin yang bisa akses
 def update_password_by_admin_route(username):   
@@ -226,7 +226,7 @@ def get_all_users_route():
 def get_user_by_username_route(username):
     return auth_controller.get_user_by_username(username)
 
-@bp.route('/admin/delete-user/<string:username>', methods=['DELETE'])
+@bp.route('/admin/delete-user/<string:username>', methods=['POST'])
 @jwt_required()
 @admin_required()  # Hanya admin yang bisa akses
 def delete_user_route(username):

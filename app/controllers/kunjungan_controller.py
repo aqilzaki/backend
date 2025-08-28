@@ -205,5 +205,5 @@ def get_kunjungan_by_username_for_admin(username):
     if not user:
         return jsonify([]), 200 # Kembalikan list kosong jika user tidak ada
 
-    kunjungan_sales = Kunjungan.query.filter_by(id_mr=user.id).order_by(Kunjungan.tanggal_input.desc()).all()
+    kunjungan_sales = Kunjungan.query.filter_by(id_mr=user.username).order_by(Kunjungan.tanggal_input.desc()).all()
     return jsonify([k.to_dict() for k in kunjungan_sales]), 200

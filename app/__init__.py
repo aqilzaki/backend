@@ -25,8 +25,14 @@ def create_app():
     CORS(app)
     
     # Konfigurasi aplikasi
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:@localhost/absensi_sales'
-    #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://teke5124_tekmo:Tekno_123@localhost/teke5124_absensi_sales'
+    # Database configuration untuk cPanel
+    if os.environ.get('FLASK_ENV') == 'production':
+        # Production - gunakan database cPanel
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://teke5124_tekmo:Tekno_123@localhost/teke5124_absensi_sales'
+    else:
+        # Development - gunakan database local
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:@localhost/absensi_sales'
+        
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     # Ini memaksa koneksi database untuk menggunakan zona waktu +07:00 (WIB)
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
