@@ -22,8 +22,13 @@ def create_app():
     app = Flask(__name__,static_folder=os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'static')
   )
     
-    CORS(app)
-    
+    origins = [
+    "https://jam.teknomobileindonesia.my.id", 
+    "http://localhost:5173",
+    "http://127.0.0.1:5000"
+    ]
+    CORS(app, resources={r"/*": {"origins": origins}}, supports_credentials=True)
+
     # Konfigurasi aplikasi
     # Database configuration untuk cPanel
     if os.environ.get('FLASK_ENV') == 'production':
