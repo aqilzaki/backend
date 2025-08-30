@@ -87,7 +87,7 @@ class Absensi(db.Model):
         foto_url = None
         if self.foto_absen_path:
             # Membuat URL lengkap ke file di folder static/uploads
-           foto_url = f"/static/uploads/{self.foto_absen_path}"
+           foto_url = url_for('static', filename=f'uploads/{self.foto_kunjungan_path}', _external=True)
 
         return {
             'id': self.id,

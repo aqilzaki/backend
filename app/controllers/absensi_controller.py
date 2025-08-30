@@ -56,7 +56,7 @@ def create_absensi():
 
         # Tentukan status Hadir atau Terlambat berdasarkan waktu WIB
         waktu_absen_wib = datetime.now(tz).time()
-        jam_masuk = datetime.strptime('08:30:00', '%H:%M:%S').time()
+        jam_masuk = datetime.strptime('09:00:00', '%H:%M:%S').time()
         status = 'Hadir' if waktu_absen_wib <= jam_masuk else 'Terlambat'
         
         # Buat objek Absensi baru
