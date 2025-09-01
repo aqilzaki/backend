@@ -6,6 +6,8 @@ from app.models.models import Kunjungan, User, Outlet
 from sqlalchemy import extract, func
 from datetime import datetime, timedelta
 from flask_jwt_extended import get_jwt_identity, jwt_required, get_jwt
+import uuid
+import time
 
 @jwt_required()
 # Di dalam file: app/controllers/kunjungan_controller.py
@@ -90,10 +92,12 @@ def create_kunjungan():
         if 'foto_kunjungan' in request.files:
             file = request.files['foto_kunjungan']
             if file.filename != '':
-                filename = secure_filename(file.filename)
-                file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                file.save(file_path)
-                foto_kunjungan_path = filename
+                 ext = file.filename.rsplit('.', 1)[-1].lower()  # ambil ekstensi
+                 unique_name = f"{uuid.uuid4().hex}_{int(time.time())}.{ext}"  # nama unik
+                 filename = secure_filename(unique_name)
+                 file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                 file.save(file_path)
+                 foto_kunjungan_path = filename
         
         new_kunjungan = Kunjungan(
             id_mr=current_user_id,
