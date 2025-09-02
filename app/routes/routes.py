@@ -40,6 +40,11 @@ def get_izin_by_id_route(id):
 def create_izin_route():
     return izin_controller.create_izin()
 
+@bp.route('/izin-photo-update/<string:id>', methods=['PUT'])
+@jwt_required()
+def update_izin_photo_route(id):
+    return izin_controller.update_photo_by_sales_username(id)
+
 @bp.route('/izin/<int:id>/<string:newStatus>', methods=['PUT'])
 @jwt_required()
 @admin_required()  # Hanya admin yang bisa akses

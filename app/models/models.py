@@ -57,7 +57,7 @@ class Izin(db.Model):
     tanggal_izin = db.Column(db.Date, nullable=False)
     keterangan = db.Column(db.Text, nullable=True)
     status_izin = db.Column(db.String(20), default='pending')  # Status izin, bisa 'pending', 'approved', atau 'rejected'
-    foto_absen_path = db.Column(db.String(255), nullable=True)  # Foto absen, bisa diisi jika ada
+    foto_izin_path = db.Column(db.String(255), nullable=True)  # Foto absen, bisa diisi jika ada
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -68,7 +68,7 @@ class Izin(db.Model):
             'tanggal_izin': self.tanggal_izin.isoformat() if self.tanggal_izin else None,
             'keterangan': self.keterangan,
             'status_izin': self.status_izin,
-            'foto_absen_path': self.foto_absen_path,
+            'foto_izin_path': self.foto_izin_path,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 class Absensi(db.Model):
