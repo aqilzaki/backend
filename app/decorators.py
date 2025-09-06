@@ -13,3 +13,15 @@ def admin_required():
                 return jsonify(msg="Hanya admin yang diizinkan!"), 403
         return decorator
     return wrapper
+
+def cs_required():
+    def wrapper(fn):
+        @wraps(fn)
+        def decorator(*args, **kwargs):
+            claims = get_jwt()
+            if claims.get("role") == 'cs':
+                return fn(*args, **kwargs)
+            else:
+                return jsonify(msg="Hanya CS yang diizinkan!"), 403
+        return decorator
+    return wrapper

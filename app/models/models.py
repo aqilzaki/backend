@@ -20,7 +20,8 @@ class User(db.Model):
     absensi = db.relationship('Absensi', backref='user', lazy=True, foreign_keys='Absensi.id_mr', primaryjoin="User.username==Absensi.id_mr",cascade="all, delete")
     kunjungan = db.relationship('Kunjungan', backref='user', lazy=True, foreign_keys='Kunjungan.id_mr', primaryjoin="User.username==Kunjungan.id_mr",cascade="all, delete")
     izin = db.relationship('Izin', backref='user', lazy=True, foreign_keys='Izin.id_mr', primaryjoin="User.username==Izin.id_mr")
-    
+    komplainan_customer = db.relationship('komplainan_customer', backref='user', lazy=True, foreign_keys='komplainan_customer.id_mr', primaryjoin="User.username==komplainan_customer.id_mr",cascade="all, delete")
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -141,4 +142,32 @@ class Kunjungan(db.Model):
             'presentase_pemakaian': self.presentase_pemakaian,
             'issue': self.issue,
             'tanggal_input': self.tanggal_input.isoformat() if self.tanggal_input else None
+        }
+    
+
+class komplainan_customer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    id_mr = db.Column(db.String(20), db.ForeignKey('user.username'), nullable=False)
+    produk = db.Column(db.String(255), nullable=True)
+    nomor_konsumen = db.Column(db.String(20), nullable=True)
+    nomor_tujuan = db.Column(db.String(20), nullable=True)
+    status_komplain = db.Column(db.String(120), nullable=True)
+    pic_created = db.Column(db.String(50), nullable=True)   # siapa yang bikin komplain
+    keterangan = db.Column(db.Text, nullable=True)          # catatan tambahan
+    pic_updated = db.Column(db.String(50), nullable=True)   # siapa yang update terakhir
+    updated_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'produk': self.produk,
+            'nomor_konsumen': self.nomor_konsumen,
+            'nomor_tujuan': self.nomor_tujuan,
+            'status_komplain': self.status_komplain,
+            'pic_created': self.pic_created,
+            'keterangan': self.keterangan,
+            'pic_updated': self.pic_updated,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }

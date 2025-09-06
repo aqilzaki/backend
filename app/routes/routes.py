@@ -1,7 +1,7 @@
 from flask import Blueprint
-from app.controllers import outlet_controller, izin_controller, tracking_controller, report_controller, auth_controller,  absensi_controller, kunjungan_controller, export_controller, profile_controller
+from app.controllers import outlet_controller, izin_controller, tracking_controller, report_controller, auth_controller,  absensi_controller, kunjungan_controller, export_controller, report_complain_cs_controller, profile_controller
 from flask_jwt_extended import jwt_required
-from app.decorators import admin_required
+from app.decorators import admin_required, cs_required
 import os
 from flask import jsonify, request, current_app
 
@@ -282,3 +282,42 @@ def update_outlet_route(outlet_id):
 @admin_required()
 def delete_outlet_route(outlet_id):
     return outlet_controller.delete_outlet(outlet_id)
+
+
+
+# --- Rute Komplain Customer Service ---
+
+# Create komplain baru
+@bp.route('/komplain', methods=['POST'])
+@jwt_required()
+@cs_required()
+def create_komplain_route():
+    return report_complain_cs_controller.create_complain()
+
+# Ambil semua komplain (untuk CS)
+@bp.route('/komplain', methods=['GET'])
+@jwt_required()
+@cs_required()
+def get_all_komplain_route():
+    return report_complain_cs_controller.get_all_complain()
+
+# Ambil komplain tertentu by ID
+@bp.route('/komplain/<int:id>', methods=['GET'])
+@jwt_required()
+@cs_required()
+def get_komplain_by_id_route(id):
+    return report_complain_cs_controller.get_complain_by_id(id)
+
+# Update status komplain (selesai/belum selesai + siapa yang update + keterangan)
+@bp.route('/komplain/<int:id>', methods=['PUT'])
+@jwt_required()
+@cs_required()
+def update_komplain_status_route(id):
+    return report_complain_cs_controller.update_status(id)
+
+# Hapus komplain (opsional, kalau memang mau ada)
+@bp.route('/komplain/<int:id>', methods=['DELETE'])
+@jwt_required()
+@cs_required()
+def delete_komplain_route(id):
+    return report_complain_cs_controller.delete_complain(id)
