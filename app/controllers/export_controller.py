@@ -1,9 +1,8 @@
-from flask import send_file
+from flask import send_file, make_response
 import pandas as pd
 import io
 from datetime import datetime
 from app.models.models import Absensi, Kunjungan
-
 
 def export_absensi_to_excel():
     try:
@@ -45,18 +44,24 @@ def export_absensi_to_excel():
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Data Absensi')
             summary_df.to_excel(writer, index=False, sheet_name='Ringkasan')
-
         output.seek(0)
+
         filename = f"Laporan_Absensi_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
-        return send_file(output, as_attachment=True, download_name=filename,
-                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+        response = make_response(send_file(
+            output,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ))
+        response.headers["Access-Control-Allow-Origin"] = "https://jam.teknomobileindonesia.my.id"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
+
     except Exception as e:
         return str(e), 500
 
 
-# ===========================
-# Export Data Kunjungan
-# ===========================
 def export_kunjungan_to_excel():
     try:
         kunjungan_list = Kunjungan.query.all()
@@ -82,7 +87,7 @@ def export_kunjungan_to_excel():
 
         df = pd.DataFrame(data_to_export)
 
-        # Summary berdasarkan sales
+        # Summary per sales
         summary_data = df.groupby('Nama Sales').agg({
             'ID Kunjungan': 'count',
             'Potensi Topup (Rp)': 'sum',
@@ -100,10 +105,19 @@ def export_kunjungan_to_excel():
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Data Kunjungan')
             summary_data.to_excel(writer, index=False, sheet_name='Ringkasan Per Sales')
-
         output.seek(0)
+
         filename = f"Laporan_Kunjungan_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
-        return send_file(output, as_attachment=True, download_name=filename,
-                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+        response = make_response(send_file(
+            output,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ))
+        response.headers["Access-Control-Allow-Origin"] = "https://jam.teknomobileindonesia.my.id"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
+
     except Exception as e:
         return str(e), 500

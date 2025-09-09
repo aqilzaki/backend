@@ -1,6 +1,8 @@
 from flask import request, jsonify
 from app import db
-from app.models.models import Outlet, Kunjungan
+from app.models.models import Outlet, Kunjungan, User
+from datetime import datetime, timedelta
+from sqlalchemy import or_, and_
 
 def create_outlet():
     """Membuat outlet baru (Admin Only)."""
@@ -103,3 +105,94 @@ def delete_outlet(outlet_id):
     db.session.delete(outlet)
     db.session.commit()
     return jsonify({"msg": f"Outlet '{outlet.nama_outlet}' berhasil dihapus."}), 200
+
+def search_outlets():
+    query = request.args.get("query", "").strip()
+    date_filter = request.args.get("date", "").strip()
+    
+    q = db.session.query(
+        Outlet.id_outlet,
+        Outlet.nama_outlet,
+        Outlet.created_at.label("tgl_bergabung"),
+        Kunjungan.id_mr,
+        User.name.label("nama_sales")
+    ).outerjoin(Kunjungan, Kunjungan.id_outlet == Outlet.id_outlet
+    ).outerjoin(User, User.username == Kunjungan.id_mr)
+    
+    if query:
+        q = q.filter(
+            or_(
+                Outlet.id_outlet.ilike(f"%{query}%"),
+                Outlet.nama_outlet.ilike(f"%{query}%"),
+                Kunjungan.id_mr.ilike(f"%{query}%"),
+                User.name.ilike(f"%{query}%")
+            )
+        )
+    
+    if date_filter:
+        today = datetime.today().date()
+        if date_filter == "today":
+            start = today
+            end = today
+        elif date_filter == "yesterday":
+            start = today - timedelta(days=1)
+            end = start
+        elif date_filter == "day_after":
+            start = today + timedelta(days=2)
+            end = start
+        q = q.filter(
+            and_(
+                Outlet.created_at >= start,
+                Outlet.created_at <= end
+            )
+        )
+    
+    results = q.order_by(Outlet.created_at.desc()).all()
+    
+    outlet_list = [
+        {
+            "id_outlet": r.id_outlet,
+            "nama_outlet": r.nama_outlet,
+            "id_mr": r.id_mr,
+            "nama_mr": r.nama_sales,
+            "tgl_bergabung": r.tgl_bergabung.strftime("%Y-%m-%d") if r.tgl_bergabung else None
+        }
+        for r in results
+    ]
+    return jsonify(outlet_list)
+
+def get_all_outlets_with_details():
+    """
+    Ambil semua outlet lengkap dengan id_outlet, nama_outlet, id_mr, nama_sales, dan tgl_bergabung,
+    urutkan terbaru di atas
+    """
+    try:
+        results = (
+            db.session.query(
+                Outlet.id_outlet,
+                Outlet.nama_outlet,
+                Outlet.created_at.label("tgl_bergabung"),
+                Kunjungan.id_mr,
+                User.name.label("nama_sales")
+            )
+            .outerjoin(Kunjungan, Kunjungan.id_outlet == Outlet.id_outlet)
+            .outerjoin(User, User.username == Kunjungan.id_mr)
+            .order_by(Outlet.created_at.desc())  # urutkan terbaru di atas
+            .all()
+        )
+
+        outlet_list = []
+        for row in results:
+            outlet_list.append({
+                "id_outlet": row.id_outlet,
+                "nama_outlet": row.nama_outlet,
+                "id_mr": row.id_mr if row.id_mr else None,
+                "nama_mr": row.nama_sales if row.nama_sales else None,
+                "tgl_bergabung": row.tgl_bergabung.strftime('%d/%m/%Y') if row.tgl_bergabung else None
+            })
+
+        return jsonify(outlet_list), 200
+
+    except Exception as e:
+        return jsonify({"msg": "Gagal mengambil data outlet", "error": str(e)}), 500
+

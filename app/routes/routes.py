@@ -283,6 +283,18 @@ def update_outlet_route(outlet_id):
 def delete_outlet_route(outlet_id):
     return outlet_controller.delete_outlet(outlet_id)
 
+@bp.route('/outlets/search', methods=['GET'])
+@jwt_required()
+@admin_required()
+def search_outlets_route():
+    return outlet_controller.search_outlets() 
+
+@bp.route('/outlets-all-details', methods=['GET'])
+@jwt_required()
+@admin_required()
+def get_all_outlets_with_details_route():
+    return outlet_controller.get_all_outlets_with_details() 
+
 
 
 # --- Rute Komplain Customer Service ---
